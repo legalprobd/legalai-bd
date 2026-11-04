@@ -8,6 +8,7 @@ export interface UserRecord {
   id: string;
   fullName: string;
   email: string;
+  password?: string;
   phone?: string;
   barCouncilId?: string;
   barAssociation?: string;
@@ -112,6 +113,7 @@ function initDefaultSeed(): DatabaseState {
     id: demoUserId,
     fullName: "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
     email: "advocate@demo.bd",
+    password: "legal123",
     phone: "01711000000",
     barCouncilId: "BC/DH/2014/8942",
     barAssociation: "ঢাকা আইনজীবী সমিতি ও সুপ্রিম কোর্ট বার",
@@ -488,6 +490,23 @@ export const db = {
   getUser: async (id: string): Promise<UserRecord | null> => {
     const s = getState();
     return s.users[id] || Object.values(s.users)[0] || null;
+  },
+
+  getUserByEmail: async (email: string): Promise<UserRecord | null> => {
+    const s = getState();
+    const cleanEmail = email.toLowerCase().trim();
+    return Object.values(s.users).find((u) => u.email.toLowerCase() === cleanEmail) || null;
+  },
+
+  updateUserPlan: async (userId: string, plan: "FREE" | "PRO" | "CHAMBER"): Promise<UserRecord | null> => {
+    const s = getState();
+    const u = s.users[userId] || Object.values(s.users)[0];
+    if (u) {
+      u.plan = plan;
+      saveState(s);
+      return u;
+    }
+    return null;
   },
 
   updateUserCredits: async (id: string, delta: number): Promise<UserRecord | null> => {

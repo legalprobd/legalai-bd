@@ -21,7 +21,9 @@ import {
   Mic,
   ShieldAlert,
   FileBox,
+  LogOut,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export default function HomePage() {
   const [cases, setCases] = useState<CaseRecord[]>([]);
@@ -32,6 +34,11 @@ export default function HomePage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [urgentLimitationCases, setUrgentLimitationCases] = useState<CaseRecord[]>([]);
   const [criticalOrExpiredLimitations, setCriticalOrExpiredLimitations] = useState<CaseRecord[]>([]);
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; plan?: string }>({
+    name: "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
+    email: "advocate@demo.bd",
+    plan: "PRO",
+  });
 
   // New Case Modal State
   const [newTitle, setNewTitle] = useState("");
@@ -69,6 +76,18 @@ export default function HomePage() {
   useEffect(() => {
     fetchCases();
     fetchUpcomingHearings();
+    fetch("/api/auth/session")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user?.name) {
+          setCurrentUser({
+            name: data.user.name,
+            email: data.user.email || "",
+            plan: data.user.plan || "PRO",
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -182,15 +201,23 @@ export default function HomePage() {
               </Link>
             </nav>
 
-            {/* Advocate Profile Badge */}
-            <div className="flex items-center gap-2 pl-3 border-l border-slate-200">
+            {/* Advocate Profile Badge & Logout */}
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
               <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 font-bold flex items-center justify-center text-xs">
-                MR
+                {currentUser.name.slice(0, 2)}
               </div>
               <div className="hidden sm:block text-left text-xs leading-tight">
-                <p className="font-bold text-slate-800">ব্যারিস্টার এম. এ. রহমান</p>
-                <p className="text-[10px] text-slate-500">ঢাকা জজ কোর্ট • <span className="text-emerald-700 font-semibold">PRO</span></p>
+                <p className="font-bold text-slate-800 truncate max-w-[150px]">{currentUser.name}</p>
+                <p className="text-[10px] text-slate-500">ঢাকা জজ কোর্ট • <span className="text-emerald-700 font-semibold">{currentUser.plan || "PRO"}</span></p>
               </div>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                title="লগআউট করুন"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

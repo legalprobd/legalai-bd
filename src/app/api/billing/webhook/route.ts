@@ -6,18 +6,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { trxId, amount, method, userId, plan } = body;
 
+    const targetUserId = userId || "demo-user-advocate-001";
+    const upgradedPlan: "FREE" | "PRO" | "CHAMBER" = (plan as "FREE" | "PRO" | "CHAMBER") || "PRO";
+
     const payment = await db.addPayment({
       id: "pay-" + Date.now(),
-      userId: userId || "demo-user-advocate-001",
+      userId: targetUserId,
       amount: Number(amount) || 2500,
       method: method || "bKash",
-      trxId: trxId || "TRX" + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      trxId: trxId || "BKH" + Math.random().toString(36).substring(2, 9).toUpperCase(),
       status: "COMPLETED",
-      plan: plan || "PRO",
+      plan: upgradedPlan,
       createdAt: new Date().toISOString(),
     });
 
-    await db.logAudit(payment.userId, "PAYMENT_RECEIVED", {
+    // Upgrade user plan in the database
+    const updatedUser = await db.updateUserPlan(targetUserId, upgradedPlan);
+
+    await db.logAudit(targetUserId, "PAYMENT_RECEIVED_AND_UPGRADED", {
       trxId: payment.trxId,
       amount: payment.amount,
       plan: payment.plan,
@@ -25,7 +31,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      data: payment,
+      data: {
+        payment,
+        user: updatedUser,
+        messageBn: `পেমেন্ট সফলভাবে সম্পন্ন হয়েছে এবং আপনার অ্যাকাউন্ট ${upgradedPlan} প্যাকেজে উন্নীত হয়েছে।`,
+      },
     });
   } catch (error) {
     console.error("Error in /api/billing/webhook:", error);

@@ -33,6 +33,8 @@ export const EvidenceVault: React.FC<EvidenceVaultProps> = ({
   const [selectedTag, setSelectedTag] = useState("মেডিকেল ইনজুরি রিপোর্ট");
   const [customTag, setCustomTag] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [ocrLoadingId, setOcrLoadingId] = useState<string | null>(null);
+  const [expandedOcrIds, setExpandedOcrIds] = useState<Record<string, boolean>>({});
 
   const predefinedTags = [
     "মেডিকেল ইনজুরি রিপোর্ট",
@@ -111,6 +113,7 @@ export const EvidenceVault: React.FC<EvidenceVaultProps> = ({
 
   const handleTriggerOcr = async (eid: string) => {
     try {
+      setOcrLoadingId(eid);
       const res = await fetch(`/api/cases/${caseId}/evidence/${eid}/ocr`, {
         method: "POST",
       });
@@ -118,14 +121,21 @@ export const EvidenceVault: React.FC<EvidenceVaultProps> = ({
       if (json.ok && json.data) {
         setEvidenceList((prev) =>
           prev.map((item) =>
-            item.id === eid ? { ...item, ocrTextBn: json.data.ocrTextBn } : item
+            item.id === eid ? { ...item, ...json.data } : item
           )
         );
-        alert(json.data.ocrTextBn);
+        setExpandedOcrIds((prev) => ({ ...prev, [eid]: true }));
+        if (onEvidenceChange) onEvidenceChange();
       }
     } catch (err) {
       console.error("Failed OCR:", err);
+    } finally {
+      setOcrLoadingId(null);
     }
+  };
+
+  const toggleExpandOcr = (eid: string) => {
+    setExpandedOcrIds((prev) => ({ ...prev, [eid]: !prev[eid] }));
   };
 
   return (
@@ -254,30 +264,71 @@ export const EvidenceVault: React.FC<EvidenceVaultProps> = ({
                     </button>
                   </div>
 
-                  {/* Fact mapping tag */}
+                  {/* Fact mapping tags */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
                       <Tag className="w-3 h-3" />
                       {categoryTag}
                     </span>
+                    {mapping && Object.entries(mapping).filter(([k]) => k !== "category" && k !== "extractedAt").map(([k, v]) => (
+                      <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        {String(v)}
+                      </span>
+                    ))}
                   </div>
 
-                  {/* OCR snippet */}
+                  {/* OCR snippet / Collapsible Panel */}
                   {file.ocrTextBn && (
-                    <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded border border-slate-150 line-clamp-2">
-                      <span className="font-semibold text-slate-700">OCR নোট: </span>
-                      {file.ocrTextBn}
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
+                      <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleExpandOcr(file.id)}>
+                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                          OCR ও এক্সট্রাক্টেড ফ্যাক্টস
+                        </span>
+                        <span className="text-[10px] text-indigo-600 font-semibold hover:underline">
+                          {expandedOcrIds[file.id] ? "সংক্ষেপ করুন ▲" : "বিস্তারিত দেখুন ▼"}
+                        </span>
+                      </div>
+
+                      {expandedOcrIds[file.id] ? (
+                        <div className="mt-2 pt-2 border-t border-slate-200 space-y-1.5 text-slate-700">
+                          <p className="text-[11px] whitespace-pre-wrap leading-relaxed bg-white p-2 rounded border border-slate-100">
+                            {file.ocrTextBn}
+                          </p>
+                          {mapping && Object.keys(mapping).length > 0 && (
+                            <div className="text-[10px] text-slate-500 pt-1">
+                              <strong>শনাক্তকৃত উপাদান:</strong>{" "}
+                              {Object.entries(mapping).map(([k, v]) => `${k}: ${v}`).join(" • ")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-600 line-clamp-1 mt-1">
+                          {file.ocrTextBn}
+                        </p>
+                      )}
                     </div>
                   )}
 
                   {/* Actions */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                     <button
+                      type="button"
+                      disabled={ocrLoadingId === file.id}
                       onClick={() => handleTriggerOcr(file.id)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-indigo-600"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                      OCR বিশ্লেষণ
+                      {ocrLoadingId === file.id ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                          <span>OCR ও ম্যাপিং চলছে...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>{file.ocrTextBn ? "পুনরায় OCR চালান" : "Run OCR (এআই বিশ্লেষণ)"}</span>
+                        </>
+                      )}
                     </button>
 
                     <a
