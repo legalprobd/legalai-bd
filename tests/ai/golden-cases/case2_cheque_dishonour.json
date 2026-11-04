@@ -1,0 +1,8 @@
+{
+  "caseId": "golden-002",
+  "name": "Cheque Dishonour under NI Act 1881",
+  "statement": "বিবাদী আমার ব্যবসায়িক পাওনা বাবদ ৫০ লক্ষ টাকার একটি ব্যাংক চেক প্রদান করিয়াছিল। চেকটি ব্যাংকে জমা দিলে অপর্যাপ্ত তহবিলের কারণে ডিজঅনার হয়।",
+  "expectedCategory": "Criminal",
+  "expectedRequiredLaws": ["138"],
+  "expectedMinCompleteness": 30
+}

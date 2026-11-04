@@ -1,0 +1,202 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+enum Role {
+  OWNER
+  ADVOCATE
+  JUNIOR
+  ASSISTANT
+}
+
+enum Plan {
+  FREE
+  PRO
+  CHAMBER
+}
+
+model User {
+  id             String     @id @default(uuid())
+  fullName       String
+  email          String     @unique
+  phone          String?    @unique
+  barCouncilId   String?
+  barAssociation String?
+  courtStation   String     @default("ঢাকা জজ কোর্ট")
+  role           Role       @default(ADVOCATE)
+  chamberId      String?
+  chamber        Chamber?   @relation(fields: [chamberId], references: [id])
+  plan           Plan       @default(FREE)
+  creditsUsed    Int        @default(0)
+  cases          Case[]
+  payments       Payment[]
+  auditLogs      AuditLog[]
+  createdAt      DateTime   @default(now())
+}
+
+model Chamber {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  users     User[]
+  cases     Case[]
+  createdAt DateTime @default(now())
+}
+
+model Case {
+  id                 String              @id @default(uuid())
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chamberId          String?
+  chamber            Chamber?            @relation(fields: [chamberId], references: [id])
+  title              String
+  category           String              @default("Criminal")
+  caseNumber         String?
+  courtName          String?
+  judgeName          String?
+  filingDate         DateTime?
+  nextHearingDate    DateTime?
+  limitationTriggerDate DateTime?
+  limitationDeadline DateTime?
+  limitationCaseType String?
+  courtFee           Decimal?            @db.Decimal(12, 2)
+  priority           String              @default("NORMAL")
+  clientPhone        String?
+  clientNID          String?
+  opposingCounsel    String?
+  rawStatement       String              @db.Text
+  extractedFacts     Json                @default("{}")
+  applicableLaws     Json                @default("[]")
+  completenessScore  Int                 @default(0)
+  status             String              @default("INTERVIEWING")
+  questions          InterviewQuestion[]
+  documents          GeneratedDocument[]
+  hearings           Hearing[]
+  evidenceFiles      EvidenceFile[]
+  notes              CaseNote[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model InterviewQuestion {
+  id                String   @id @default(uuid())
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fieldKey          String
+  questionBn        String   @db.Text
+  inputType         String
+  optionsBn         Json     @default("[]")
+  legalImportanceBn String   @db.Text
+  answerBn          String?  @db.Text
+  isAnswered        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+}
+
+model GeneratedDocument {
+  id          String   @id @default(uuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  docType     String
+  titleBn     String
+  contentHtml String   @db.Text
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LawSection {
+  id                 String                      @id @default(uuid())
+  actNameEn          String
+  actNameBn          String
+  sectionNumber      String
+  titleBn            String
+  contentBn          String                      @db.Text
+  isBailable         Boolean
+  punishmentBn       String
+  offenceIngredients Json                        @default("[]")
+  embedding          Unsupported("vector(1536)")?
+
+  @@unique([actNameEn, sectionNumber])
+}
+
+model SectionUpgradeRule {
+  id              String @id @default(uuid())
+  baseSection     String
+  triggeredField  String
+  triggerValues   Json
+  upgradedSection String
+  reasonBn        String @db.Text
+}
+
+model Hearing {
+  id           String    @id @default(uuid())
+  caseId       String
+  case         Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  date         DateTime
+  purpose      String
+  judgeName    String?
+  outcomeBn    String?   @db.Text
+  orderSheetBn String?   @db.Text
+  nextDate     DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model EvidenceFile {
+  id          String   @id @default(uuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    String
+  url         String
+  sizeBytes   Int      @default(0)
+  factMapping Json     @default("{}")
+  ocrTextBn   String?  @db.Text
+  uploadedAt  DateTime @default(now())
+}
+
+model CaseNote {
+  id        String   @id @default(uuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  contentBn String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Decimal  @db.Decimal(10, 2)
+  method    String
+  trxId     String   @unique
+  status    String
+  plan      Plan
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  metadata  Json
+  createdAt DateTime @default(now())
+}
+
+model PromptVersion {
+  id        String   @id @default(uuid())
+  name      String
+  version   Int
+  promptEn  String   @db.Text
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([name, version])
+}

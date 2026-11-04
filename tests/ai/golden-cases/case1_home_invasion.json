@@ -1,0 +1,8 @@
+{
+  "caseId": "golden-001",
+  "name": "Home Invasion & Violent Assault",
+  "statement": "গতকাল রাতে পাশের বাড়ির করিম মিয়া তার লোকজন নিয়ে আমাদের বাসায় ঢুকে ভাঙচুর করেছে এবং আমার ভাইকে মেরে মাথা ফাটিয়ে দিয়েছে।",
+  "expectedCategory": "Criminal",
+  "expectedRequiredLaws": ["১৪৩", "৪৫২", "৩০৭", "৪২৭", "৫০৬"],
+  "expectedMinCompleteness": 25
+}

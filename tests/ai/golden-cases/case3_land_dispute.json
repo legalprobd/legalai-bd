@@ -1,0 +1,8 @@
+{
+  "caseId": "golden-003",
+  "name": "Land Trespass & Injunction Suit",
+  "statement": "আমাদের পৈতৃক খরিদসূত্রে প্রাপ্ত নালিশি জমিতে বিবাদী দলবল নিয়ে জোরপূর্বক সীমানা প্রাচীর ভেঙে অনুপ্রবেশ করে এবং সেখানে অবৈধ স্থাপনা নির্মাণের পাঁয়তারা করছে।",
+  "expectedCategory": "Civil",
+  "expectedRequiredLaws": ["৪২", "৫৪", "অর্ডার ৩৯, রুল ১-২"],
+  "expectedMinCompleteness": 30
+}
