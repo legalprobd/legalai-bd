@@ -1,4 +1,6 @@
 import { ApplicableLaw, DraftDocType } from "@/lib/ai/schemas";
+import { verifyCitations } from "@/lib/law/citationVerifier";
+import { getNiActJurisdiction } from "@/lib/law/niAct";
 
 export interface TemplateData {
   courtStation?: string;
@@ -15,6 +17,8 @@ export interface TemplateData {
   injuriesAndMedical?: string;
   stolenOrDamagedItems?: string;
   totalFinancialLoss?: string;
+  chequeAmount?: number | string;
+  isNiAct?: boolean;
   motiveOrPreviousDispute?: string;
   witnesses?: string[];
   applicableLaws?: ApplicableLaw[];
@@ -191,10 +195,30 @@ export function generateFirTemplate(data: TemplateData): string {
 }
 
 export function generateCrPetitionTemplate(data: TemplateData): string {
-  const court = data.courtStation || "বিজ্ঞ চীফ জুডিসিয়াল ম্যাজিস্ট্রেট আদালত";
   const dist = data.district || "ঢাকা";
   const comp = data.complainantName || "**[ফরিয়াদীর নাম]**";
   const compDetails = data.complainantDetails || "পিতা: **[পিতার নাম]**, সাং: **[গ্রাম/মহল্লা]**, থানা: **[থানা]**, জেলা: " + dist;
+
+  const isNiActCase =
+    data.isNiAct ||
+    (data.applicableLaws && data.applicableLaws.some(l => l.section.includes("138") || l.titleBn?.includes("চেক") || l.titleBn?.includes("এনআই"))) ||
+    data.caseTitle?.includes("চেক") ||
+    data.caseTitle?.includes("এনআই");
+
+  let court = data.courtStation || "বিজ্ঞ চীফ জুডিসিয়াল ম্যাজিস্ট্রেট আদালত";
+  let lawReference = "দণ্ডবিধি আইনের ১৪৩/১৪৮/৪৪৮/৪৫২/৫০৬/৩৪ ধারা";
+  let sections = data.applicableLaws && data.applicableLaws.length > 0
+    ? data.applicableLaws.map(l => l.section).join("/")
+    : "১৪৩/১৪৮/৪৪৮/৪৫২/৫০৬/৩৪";
+
+  if (isNiActCase) {
+    const niJurisdiction = getNiActJurisdiction(data.chequeAmount || data.totalFinancialLoss, dist);
+    court = niJurisdiction.courtNameBn;
+    lawReference = `${niJurisdiction.actReferenceBn}`;
+    sections = "১৩৮";
+  } else if (data.applicableLaws && data.applicableLaws.length > 0) {
+    lawReference = `দণ্ডবিধি আইনের ${sections} ধারা`;
+  }
 
   const accusedListStr = (data.accusedList && data.accusedList.length > 0)
     ? data.accusedList.map((a, i) => {
@@ -203,10 +227,6 @@ export function generateCrPetitionTemplate(data: TemplateData): string {
       }).join("<br/>")
     : "১। **[১ নং আসামির নাম, পিতা ও ঠিকানা]**<br/>২। **[২ নং আসামির নাম, পিতা ও ঠিকানা]**";
 
-  const sections = data.applicableLaws && data.applicableLaws.length > 0
-    ? data.applicableLaws.map(l => l.section).join("/")
-    : "১৪৩/১৪৮/৪৪৮/৪৫২/৫০৬/৩৪";
-
   const lossFormatted = (data.totalFinancialLoss || "১,৫০,০০০/- টাকা")
     .replace(/টাকা.*$/, "")
     .trim() + " টাকা";
@@ -214,9 +234,9 @@ export function generateCrPetitionTemplate(data: TemplateData): string {
   return `
 <div class="legal-doc cr-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto">
   <div class="text-center mb-6">
-    <h2 class="text-lg font-bold">মোকাম বিজ্ঞ ${court}, ${dist}।</h2>
+    <h2 class="text-lg font-bold">মোকাম ${court.includes("মোকাম") ? court : `বিজ্ঞ ${court}`}</h2>
     <p class="text-sm font-semibold">সি. আর. (CR) মামলা নং: ............ / ২০২৬ ইং</p>
-    <p class="text-sm">ধারা: দণ্ডবিধি আইনের ${sections} ধারা।</p>
+    <p class="text-sm">ধারা: ${lawReference}।</p>
   </div>
 
   <div class="border p-4 rounded mb-6 text-sm bg-gray-50">
@@ -267,7 +287,7 @@ export function generateCrPetitionTemplate(data: TemplateData): string {
   <div class="my-6">
     <p class="font-bold underline mb-1">অতএব বিনীত প্রার্থনা:</p>
     <p class="indent-8 text-justify">
-      অতএব, বিজ্ঞ আদালত সমীপে ফরিয়াদীর বিনীত প্রার্থনা এই যে, ন্যায়বিচারের স্বার্থে অত্র ফরিয়াদখানা আমলে গ্রহণ করিয়া আসামিগণের বিরুদ্ধে দণ্ডবিধির <strong>${sections}</strong> ধারায় গ্রেপ্তারি পরোয়ানা (W/A) জারি করতঃ তাহাদেরকে জেল হাজতে আটক রাখিয়া বিচারান্তে উপযুক্ত শাস্তির আদেশ দানে বিজ্ঞ আদালতের সদয় মর্জি হয়।
+      অতএব, বিজ্ঞ আদালত সমীপে ফরিয়াদীর বিনীত প্রার্থনা এই যে, ন্যায়বিচারের স্বার্থে অত্র ফরিয়াদখানা আমলে গ্রহণ করিয়া আসামিগণের বিরুদ্ধে ${isNiActCase ? "দ্য নেগোশিয়েবল ইন্সট্রুমেন্টস অ্যাক্টের" : "দণ্ডবিধির"} <strong>${sections}</strong> ধারায় গ্রেপ্তারি পরোয়ানা (W/A) জারি করতঃ তাহাদেরকে জেল হাজতে আটক রাখিয়া বিচারান্তে উপযুক্ত শাস্তির আদেশ দানে বিজ্ঞ আদালতের সদয় মর্জি হয়।
     </p>
   </div>
 
@@ -408,23 +428,35 @@ export function generateCivilPlaintTemplate(data: TemplateData): string {
 }
 
 export function generateDocumentByType(docType: DraftDocType, data: TemplateData): { titleBn: string; contentHtml: string } {
+  let res: { titleBn: string; contentHtml: string };
   switch (docType) {
     case "FIR":
-      return { titleBn: "থানার এজাহার (FIR) খসড়া", contentHtml: generateFirTemplate(data) };
+      res = { titleBn: "থানার এজাহার (FIR) খসড়া", contentHtml: generateFirTemplate(data) };
+      break;
     case "CR_PETITION":
-      return { titleBn: "বিজ্ঞ ম্যাজিস্ট্রেট আদালতে সি.আর. মামলার আরজি", contentHtml: generateCrPetitionTemplate(data) };
+      res = { titleBn: "বিজ্ঞ ম্যাজিস্ট্রেট আদালতে সি.আর. মামলার আরজি", contentHtml: generateCrPetitionTemplate(data) };
+      break;
     case "BAIL_PETITION":
     case "ANTICIPATORY_BAIL":
-      return { titleBn: "জামিনের আবেদন (CrPC ৪৯৭/৪৯৮)", contentHtml: generateBailPetitionTemplate(data) };
+      res = { titleBn: "জামিনের আবেদন (CrPC ৪৯৭/৪৯৮)", contentHtml: generateBailPetitionTemplate(data) };
+      break;
     case "PLAINT":
     case "INJUNCTION_PERMANENT":
-      return { titleBn: "দেওয়ানি আরজি (Plaint)", contentHtml: generateCivilPlaintTemplate(data) };
+      res = { titleBn: "দেওয়ানি আরজি (Plaint)", contentHtml: generateCivilPlaintTemplate(data) };
+      break;
     case "INJUNCTION_TEMP":
-      return {
+      res = {
         titleBn: "অস্থায়ী নিষেধাজ্ঞার আবেদন (Order 39 Rule 1-2 CPC)",
         contentHtml: generateCivilPlaintTemplate(data),
       };
+      break;
     default:
-      return { titleBn: `${docType} খসড়া`, contentHtml: generateFirTemplate(data) };
+      res = { titleBn: `${docType} খসড়া`, contentHtml: generateFirTemplate(data) };
+      break;
   }
+  const checked = verifyCitations(res.contentHtml);
+  return {
+    titleBn: res.titleBn,
+    contentHtml: checked.verifiedHtml,
+  };
 }

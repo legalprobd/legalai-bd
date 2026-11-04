@@ -57,4 +57,19 @@ describe("AI Golden Tests (Deterministic Consistency)", () => {
     expect(sections.some(s => s.includes("১৯(ক)") || s.includes("19(a)"))).toBe(true);
     expect(sections.some(s => s.includes("৯") || s.includes("sr_9"))).toBe(true);
   });
+
+  it("evaluates User Statement: Kudus Talukdar Civil Land Encroachment & Injunction", () => {
+    const statement = "আমাদের পৈতৃক খরিদসূত্রে প্রাপ্ত নালিশি জমিতে আমরা দীর্ঘদিন ধরে শান্তিপূর্ণ ভোগদখলে আছি। কিন্তু বিবাদী কুদ্দুস তালুকদার দলবল নিয়ে সীমানা প্রাচীর ভেঙে অনুপ্রবেশ করে এবং সেখানে অবৈধ স্থাপনা নির্মাণের পাঁয়তারা করছে ও আমাদের জমি জবরদখলের হুমকি দিচ্ছে";
+    const analysis = generateMockCaseAnalysis(statement);
+    expect(analysis.caseCategory).toBe("Civil");
+    expect(analysis.caseTitleBn).toContain("কুদ্দুস তালুকদার");
+    expect(analysis.extractedFacts.accusedList.some(a => a.includes("কুদ্দুস তালুকদার"))).toBe(true);
+    expect(analysis.extractedFacts.weaponsUsed).toHaveLength(0);
+    expect(analysis.extractedFacts.complainantName).toBe("বাদী নিজে");
+    expect(analysis.followUpQuestions.some(q => q.questionBn.includes("অস্ত্র"))).toBe(false);
+
+    const sections = analysis.applicableLaws.map(l => l.section);
+    expect(sections.some(s => s.includes("৪২") || s.includes("42"))).toBe(true);
+    expect(sections.some(s => s.includes("৫৪") || s.includes("54"))).toBe(true);
+  });
 });

@@ -627,6 +627,56 @@ export function generateMockCaseAnalysis(
       ],
       legalImportanceBn: "নোটিশের ৩০ দিন মেয়াদ পূর্ণ হওয়ার পরেই পরবর্তী ৩০ দিনের মধ্যে মামলা দায়েরের কারণ উৎপন্ন হয়।",
     });
+  } else if (isLandTitleDispute) {
+    if (namedAccused.length > 0) {
+      allPossibleQuestions.push({
+        fieldKey: "accused_details",
+        questionBn: `১নং বিবাদী ${namedAccused[0]}-এর পিতার নাম, বয়স ও পূর্ণাঙ্গ স্থায়ী ঠিকানা আপনার জানা আছে কি?`,
+        inputType: "text",
+        optionsBn: [],
+        legalImportanceBn: "দেওয়ানি আরজির ১নং বিবাদী তপশিলে পূর্ণাঙ্গ নাম-ঠিকানা সমন জারির জন্য আবশ্যক।",
+      });
+    } else {
+      allPossibleQuestions.push({
+        fieldKey: "accused_details",
+        questionBn: "নালিশি জমিতে অনুপ্রবেশকারী মূল বিবাদীদের নাম বা পরিচয় জানা আছে কি?",
+        inputType: "text",
+        optionsBn: [],
+        legalImportanceBn: "দেওয়ানি স্বত্ব ঘোষণা ও চিরস্থায়ী নিষেধাজ্ঞার আরজিতে বিবাদীদের সুনির্দিষ্ট নাম-ঠিকানা প্রয়োজন।",
+      });
+    }
+
+    allPossibleQuestions.push({
+      fieldKey: "property_document",
+      questionBn: "নালিশি সম্পত্তির মালিকানার সপক্ষে আপনার হেফাজতে কী কী দলিল বা পরচা (CS/SA/RS/BS খতিয়ান) রয়েছে?",
+      inputType: "select",
+      optionsBn: [
+        "হ্যাঁ, পৈতৃক ওয়ারিশান সূত্রে প্রাপ্ত বৈধ খতিয়ান ও দাখিলা রয়েছে",
+        "বৈধ রেজিস্ট্রি কবলা দলিল ও নামজারি খতিয়ান রয়েছে",
+        "কাগজপত্র ও পর্চা সংগ্রহের প্রক্রিয়াধীন",
+      ],
+      legalImportanceBn: "দেওয়ানি স্বত্ব ঘোষণা ও চিরস্থায়ী নিষেধাজ্ঞার মোকদ্দমায় মালিকানার প্রমাণস্বরূপ দালিলিক সাক্ষ্য অপরিহার্য।",
+    });
+
+    allPossibleQuestions.push({
+      fieldKey: "property_schedule",
+      questionBn: "নালিশি জমির সঠিক পরিমাণ, দাগ নম্বর, খতিয়ান ও চৌহদ্দির (উত্তর-দক্ষিণ-পূর্ব-পশ্চিমের সীমানা) বিবরণ জানা আছে কি?",
+      inputType: "text",
+      optionsBn: [],
+      legalImportanceBn: "দেওয়ানি কার্যবিধির অর্ডার ৭ রুল ৩ অনুযায়ী স্থাবর সম্পত্তির সুনির্দিষ্ট তফসিল ও চৌহদ্দি উল্লেখ করা বাধ্যতামূলক।",
+    });
+
+    allPossibleQuestions.push({
+      fieldKey: "threat_nature",
+      questionBn: "বিবাদী কর্তৃক শান্তিপূর্ন ভোগদখলে বিঘ্ন সৃষ্টি বা সীমানা প্রাচীর ভাঙার সুনির্দিষ্ট তারিখ ও সময় কখন?",
+      inputType: "select",
+      optionsBn: [
+        "গতকাল বা বিগত কয়েক দিনের মধ্যে জোরপূর্বক সীমানা প্রাচীর ভেঙে অনুপ্রবেশ করেছে",
+        "পূর্ব থেকেই বিরোধ চলছে এবং সম্প্রতি স্থাপনা নির্মাণের অপচেষ্টা চালাচ্ছে",
+        "মৌখিকভাবে জমি ছেড়ে দেওয়ার ও জবরদখলের হুমকি দিয়েছে",
+      ],
+      legalImportanceBn: "দেওয়ানি প্রতিকারের কারণ (Cause of Action) উদ্ভব ও অন্তর্বর্তীকালীন অস্থায়ী নিষেধাজ্ঞা (CPC Order 39) প্রার্থনায় আবশ্যক।",
+    });
   } else {
     // Q: Accused details
     if (namedAccused.length > 0) {
@@ -721,7 +771,7 @@ export function generateMockCaseAnalysis(
 
   // 7. Dynamic extracted facts
   let extractedWeapons: string[] = [];
-  if (isCheque) {
+  if (isCheque || isLandTitleDispute) {
     extractedWeapons = [];
   } else if (detectedWeapons.length > 0) {
     extractedWeapons = detectedWeapons;
@@ -737,7 +787,9 @@ export function generateMockCaseAnalysis(
   }
 
   let extractedInjuries = "শারীরিক মারপিট ও জখম";
-  if (isNariShishu) {
+  if (isLandTitleDispute) {
+    extractedInjuries = "দেওয়ানি বিরোধ: শান্তিপূর্ন ভোগদখলে বিঘ্ন সৃষ্টি ও সীমানা প্রাচীর ভেঙে জমি জবরদখল ও অবৈধ স্থাপনা নির্মাণের অপচেষ্টা";
+  } else if (isNariShishu) {
     extractedInjuries = "যৌতুকের দাবিকৃত অর্থ না পেয়ে শারীরিক মারধর ও জখম";
   } else if (hasKnife && isRobbery) {
     extractedInjuries = "ধারালো ছুরি দিয়ে পেটে আঘাত ও রক্তাক্ত গুরুতর জখম";
@@ -752,12 +804,20 @@ export function generateMockCaseAnalysis(
     extractedInjuries = answeredQuestions["injury_severity"];
   }
 
-  const advice: string[] = [
+  let advice: string[] = [
     "অবিলম্বে নিকটস্থ থানায় এজাহার (FIR) দায়ের করুন এবং অস্ত্র আইনের ১৯(ক) ধারা অন্তর্ভুক্তির জন্য আবেদন করুন।",
     "থানা যদি মামলা নিতে গড়িমসি করে, তবে বিজ্ঞ জুডিসিয়াল ম্যাজিস্ট্রেট আদালতে দ্রুত সি.আর. মোকদ্দমা দায়ের করুন।",
     "সুনির্দিষ্ট প্রতিকার আইন, ১৮৭৭ এর ধারা ৯ অনুযায়ী ৬ মাসের মধ্যে দেওয়ানি দখল পুনরুদ্ধারের মামলা প্রস্তুত রাখুন।",
     "ঘটনাস্থলে আসামিদের সশস্ত্র অবস্থান ও বলপ্রয়োগের চাক্ষুষ সাক্ষীদের নাম ফর্দে অন্তর্ভুক্ত করুন।",
   ];
+  if (isLandTitleDispute) {
+    advice = [
+      "বিজ্ঞ সিনিয়র সহকারী জজ আদালতে স্বত্ব ঘোষণা ও চিরস্থায়ী নিষেধাজ্ঞার (Specific Relief Act 42 ও 54 ধারা) আরজি দাখিল করুন।",
+      "জরুরি ভিত্তিতে দেওয়ানি কার্যবিধির অর্ডার ৩৯ রুল ১-২ অনুযায়ী অন্তর্বর্তীকালীন অস্থায়ী নিষেধাজ্ঞা ও স্থিতাবস্থা (Status Quo) বজায় রাখার আবেদন করুন।",
+      "জমির সিএস, এসএ, আরএস/বিএস খতিয়ান এবং নামজারি ডিসিআর ও দাখিলার সার্টিফাইড কপি আরজির সাথে ফিরিস্তি সহকারে দাখিল করুন।",
+      "ঘটনাস্থলের তফসিলভুক্ত নালিশি জমির চৌহদ্দি নির্ধারণে স্থানীয় মৌজা ম্যাপ ও অ্যাডভোকেট কমিশনার নিয়োগের প্রস্তুতি রাখুন।",
+    ];
+  }
 
   // Dynamic Case Title
   const mainName = namedAccused.length > 0 ? namedAccused[0] : "";
@@ -768,10 +828,10 @@ export function generateMockCaseAnalysis(
     title = `ধারালো ছুরি দিয়ে আঘাত ও ছিনতাই${mainName ? ` — ${mainName} ও অন্যান্য` : ""}`;
   } else if (hasFirearm && hasLandOrHomeGrab) {
     title = `বাড়ি জবরদখল ও আগ্নেয়াস্ত্র প্রদর্শন${mainName ? ` — ${mainName} ও অন্যান্য` : ""}`;
+  } else if (isLandTitleDispute) {
+    title = `নালিশি জমির স্বত্ব ঘোষণা ও চিরস্থায়ী নিষেধাজ্ঞা${mainName ? ` — ${mainName} ও অন্যান্য` : ""}`;
   } else if (hasLandOrHomeGrab) {
     title = `বসতবাড়ি জোরপূর্বক বেদখল ও অনধিকার প্রবেশ${mainName ? ` — ${mainName} ও অন্যান্য` : ""}`;
-  } else if (isLandTitleDispute) {
-    title = "নালিশি জমির স্বত্ব ঘোষণা ও চিরস্থায়ী নিষেধাজ্ঞা";
   } else if (isCheque) {
     title = `এনআই অ্যাক্ট ১৩৮ ধারায় চেক ডিজঅনার মোকদ্দমা${mainName ? ` — ${mainName}` : ""}`;
   } else {
@@ -779,27 +839,31 @@ export function generateMockCaseAnalysis(
   }
 
   // Determine financial loss
-  let financialLoss = "আনুমানিক ১,৫০,০০০/- টাকা";
+  let financialLoss = isLandTitleDispute ? "নালিশি সম্পত্তির আনুমানিক মূল্য ১০,০০,০০০/- টাকা" : "আনুমানিক ১,৫০,০০০/- টাকা";
   if (text.includes("৫০ হাজার") || text.includes("৫০,০০০")) {
     financialLoss = "৫০,০০০/- টাকা";
   } else if (text.includes("১০ লক্ষ") || text.includes("১০ লাখ")) {
     financialLoss = "১০,০০,০০০/- টাকা";
   }
 
-  // Dynamic Accused list
+  // Dynamic Accused / Defendant list
   let accused: string[] = [];
   if (namedAccused.length > 0) {
     namedAccused.forEach((name, i) => {
-      accused.push(`${name} (${i === 0 ? "প্রধান অভিযুক্ত/দখলকারী" : "সহযোগী"})`);
+      accused.push(`${name} (${i === 0 ? (isLandTitleDispute ? "১নং বিবাদী" : "প্রধান অভিযুক্ত/দখলকারী") : (isLandTitleDispute ? "বিবাদী" : "সহযোগী")})`);
     });
-    accused.push(`সহ অজ্ঞাতনামা আরও ${unknownCountStr}`);
+    accused.push(isLandTitleDispute ? `সহ আরও অন্যান্য অজ্ঞাতনামা বিবাদীগণ` : `সহ অজ্ঞাতনামা আরও ${unknownCountStr}`);
   } else if (hasMultipleAttackers) {
-    accused = [
-      "১। অজ্ঞাতনামা সশস্ত্র দখলদার দলের নেতা",
-      `২। দলবদ্ধভাবে অংশগ্রহণকারী আরও ${unknownCountStr}`,
-    ];
+    accused = isLandTitleDispute
+      ? ["১। অজ্ঞাতনামা দখলদার দলের নেতা (১নং বিবাদী)", "২। দলবদ্ধভাবে অংশগ্রহণকারী অন্যান্য বিবাদীগণ"]
+      : [
+          "১। অজ্ঞাতনামা সশস্ত্র দখলদার দলের নেতা",
+          `২। দলবদ্ধভাবে অংশগ্রহণকারী আরও ${unknownCountStr}`,
+        ];
   } else {
-    accused = ["১। অজ্ঞাতনামা প্রধান হামলাকারী", "২। অজ্ঞাতনামা ৪/৫ জন সহযোগী"];
+    accused = isLandTitleDispute
+      ? ["১। ১নং অজ্ঞাতনামা বিবাদী", "২। অজ্ঞাতনামা অন্যান্য সহযোগী বিবাদীগণ"]
+      : ["১। অজ্ঞাতনামা প্রধান হামলাকারী", "২। অজ্ঞাতনামা ৪/৫ জন সহযোগী"];
   }
 
   const category = isNariShishu
@@ -815,9 +879,9 @@ export function generateMockCaseAnalysis(
     extractedFacts: {
       incidentDate: answeredQuestions["incident_time"] || "গতকাল রাত্রি",
       incidentTime: "রাত্রি আনুমানিক ১০:৩০ ঘটিকা",
-      incidentPlace: (text.includes("বাসা") || text.includes("বাড়ি")) ? "বাদীর নিজ বাড়ি / বসতভিটা" : (answeredQuestions["incident_place"] || "বাদীর নিজ বসতবাড়ি"),
-      complainantName: "ফরিয়াদী / ভুক্তভোগী নিজে",
-      complainantDetails: "সাং: [গ্রাম/মহল্লা], থানা: কোতোয়ালি, জেলা: ঢাকা",
+      incidentPlace: isLandTitleDispute ? "নালিশি জমি ও সীমানা প্রাচীর" : ((text.includes("বাসা") || text.includes("বাড়ি")) ? "বাদীর নিজ বাড়ি / বসতভিটা" : (answeredQuestions["incident_place"] || "বাদীর নিজ বসতবাড়ি")),
+      complainantName: isLandTitleDispute ? "বাদী নিজে" : "ফরিয়াদী / ভুক্তভোগী নিজে",
+      complainantDetails: isLandTitleDispute ? "সাং: [গ্রাম/মহল্লা], থানা: কোতোয়ালি, জেলা: ঢাকা (বাদীপক্ষ)" : "সাং: [গ্রাম/মহল্লা], থানা: কোতোয়ালি, জেলা: ঢাকা",
       accusedList: accused,
       unknownAccusedCount: unknownCountStr,
       weaponsUsed: extractedWeapons,

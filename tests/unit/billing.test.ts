@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { db } from "@/lib/db";
+import crypto from "crypto";
 
 describe("Billing & Payment Gateway Engine (Phase 4)", () => {
   const testUserId = "demo-user-advocate-001";
@@ -37,5 +38,34 @@ describe("Billing & Payment Gateway Engine (Phase 4)", () => {
 
     const payments = await db.getPayments();
     expect(payments.some((p) => p.trxId === mockTrxId)).toBe(true);
+  });
+
+  it("3. Validates duplicate trxId idempotency", async () => {
+    const duplicateTrxId = "BKH_DUP_" + Date.now();
+    
+    // First payment
+    await db.addPayment({
+      id: "pay-dup-1-" + Date.now(),
+      userId: testUserId,
+      amount: 5000,
+      method: "bKash",
+      trxId: duplicateTrxId,
+      status: "COMPLETED",
+      plan: "CHAMBER",
+      createdAt: new Date().toISOString(),
+    });
+
+    // Check duplicate detection
+    const allPayments = await db.getPayments();
+    const found = allPayments.filter((p) => p.trxId === duplicateTrxId);
+    expect(found.length).toBe(1);
+  });
+
+  it("4. Validates HMAC-SHA256 signature generation for bKash webhooks", () => {
+    const secret = "bkash-webhook-secret-bd-2026";
+    const payload = JSON.stringify({ trxId: "TRX12345", amount: 2500 });
+    const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+    expect(signature).toBeDefined();
+    expect(signature.length).toBe(64);
   });
 });

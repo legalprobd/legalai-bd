@@ -1,12 +1,10 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [vector]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -32,8 +30,12 @@ model User {
   phone          String?    @unique
   barCouncilId   String?
   barAssociation String?
-  courtStation   String     @default("ঢাকা জজ কোর্ট")
-  role           Role       @default(ADVOCATE)
+  courtStation         String     @default("ঢাকা জজ কোর্ট")
+  chamberName          String?
+  digitalSignatureUrl  String?
+  chamberLetterheadUrl String?
+  isAdmin              Boolean    @default(false)
+  role                 Role       @default(ADVOCATE)
   chamberId      String?
   chamber        Chamber?   @relation(fields: [chamberId], references: [id])
   plan           Plan       @default(FREE)
@@ -152,16 +154,16 @@ model GeneratedDocument {
 }
 
 model LawSection {
-  id                 String                      @id @default(uuid())
+  id                 String   @id @default(uuid())
   actNameEn          String
   actNameBn          String
   sectionNumber      String
   titleBn            String
-  contentBn          String                      @db.Text
+  contentBn          String   @db.Text
   isBailable         Boolean
   punishmentBn       String
-  offenceIngredients Json                        @default("[]")
-  embedding          Unsupported("vector(1536)")?
+  offenceIngredients Json     @default("[]")
+  embeddingText      String?  @db.Text
 
   @@unique([actNameEn, sectionNumber])
 }

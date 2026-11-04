@@ -1,0 +1,14 @@
+# Robots.txt for LegalAI BD
+User-agent: *
+Allow: /
+Allow: /terms
+Allow: /privacy
+Allow: /pricing
+
+# Disallow authenticated private advocate workspaces
+Disallow: /case/
+Disallow: /admin/
+Disallow: /settings/
+Disallow: /api/
+
+Sitemap: https://legalai.bd/sitemap.xml

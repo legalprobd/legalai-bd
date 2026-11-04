@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { deleteStoredFile } from "@/lib/storage";
+import { requireAuth } from "@/lib/auth-check";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; eid: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id, eid } = await params;
     const body = await request.json();
 
@@ -59,6 +63,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; eid: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id, eid } = await params;
     const evidenceList = await db.getEvidence(id);
     const target = evidenceList.find((e) => e.id === eid);

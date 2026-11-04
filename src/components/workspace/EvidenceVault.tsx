@@ -281,14 +281,32 @@ export const EvidenceVault: React.FC<EvidenceVaultProps> = ({
                   {file.ocrTextBn && (
                     <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
                       <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleExpandOcr(file.id)}>
-                        <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                          OCR ও এক্সট্রাক্টেড ফ্যাক্টস
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            OCR ও এক্সট্রাক্টেড ফ্যাক্টস
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              (file as any).engine === "AI Vision"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                : "bg-amber-50 text-amber-700 border-amber-300"
+                            }`}
+                          >
+                            {(file as any).engine === "AI Vision" ? "AI Vision" : "Tesseract"}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-indigo-600 font-semibold hover:underline">
                           {expandedOcrIds[file.id] ? "সংক্ষেপ করুন ▲" : "বিস্তারিত দেখুন ▼"}
                         </span>
                       </div>
+
+                      {(file as any).accuracyWarning && (
+                        <div className="mt-1.5 p-1.5 bg-amber-50 border border-amber-200 rounded text-[10px] text-amber-800 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                          <span>Tesseract ইঞ্জিন ব্যবহৃত হয়েছে: স্ক্যান করা বাংলা টেক্সটের বানান ও সংখ্যা পুনঃপরীক্ষা করুন।</span>
+                        </div>
+                      )}
 
                       {expandedOcrIds[file.id] ? (
                         <div className="mt-2 pt-2 border-t border-slate-200 space-y-1.5 text-slate-700">

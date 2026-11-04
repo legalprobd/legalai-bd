@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth-check";
 
 export async function POST(request: Request) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const body = await request.json();
     const { plan, userId } = body;
 

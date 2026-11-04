@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth-check";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; hid: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id, hid } = await params;
     const body = await request.json();
 
@@ -69,6 +73,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; hid: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id, hid } = await params;
     const success = await db.deleteHearing(id, hid);
 

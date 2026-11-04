@@ -6,12 +6,23 @@ import { applySectionUpgrades } from "@/lib/law/upgradeRules";
 import { computeCompleteness } from "@/lib/law/completeness";
 import { generateDocumentByType } from "@/lib/templates/bdCourtTemplates";
 import { DraftDocType, GeneratedDocItem } from "@/lib/ai/schemas";
+import { requireAuth } from "@/lib/auth-check";
+import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ip = getClientIp(request);
+    const { allowed, resetInSec } = checkRateLimit(`interview:${ip}`, 20, 60 * 1000);
+    if (!allowed) {
+      return rateLimitExceededResponse(resetInSec);
+    }
+
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const existingCase = await db.getCaseById(id);
 

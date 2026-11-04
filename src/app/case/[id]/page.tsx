@@ -266,6 +266,7 @@ function CaseWorkspaceInner() {
         {/* Left Column (28% ~ md:col-span-3 or 4) */}
         <section className="md:col-span-3 lg:col-span-3 h-full overflow-hidden">
           <StatementInputPanel
+            key={`stmt-${caseRecord.id}`}
             caseRecord={caseRecord}
             onUpdateStatement={handleUpdateStatement}
             isAnalyzing={isAnalyzing}
@@ -275,6 +276,7 @@ function CaseWorkspaceInner() {
         {/* Center Column (34% ~ md:col-span-4 or 5) */}
         <section className="md:col-span-4 lg:col-span-4 h-full overflow-hidden">
           <InterrogationPanel
+            key={`inter-${caseRecord.id}`}
             caseRecord={caseRecord}
             onSubmitAnswers={handleSubmitAnswers}
             isSubmitting={isSubmitting}
@@ -284,6 +286,7 @@ function CaseWorkspaceInner() {
         {/* Right Column (38% ~ md:col-span-5) */}
         <section className="md:col-span-5 lg:col-span-5 h-full overflow-hidden">
           <DocumentEditorPanel
+            key={`doc-${caseRecord.id}`}
             caseRecord={caseRecord}
             onGenerateDocument={handleGenerateDocument}
             isGenerating={isGenerating}

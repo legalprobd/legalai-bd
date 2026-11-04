@@ -108,3 +108,41 @@ export function checkUserCredits(creditsUsed: number, plan: "FREE" | "PRO" | "CH
 
   return { canProceed: true };
 }
+
+/**
+ * 6. Constraint 1: Strict Boolean Gate for addressDisputed
+ * Evaluates document readiness or AI gating.
+ * Strictly requires the value to be false. If null, undefined, true, or anything else, the gate fails.
+ */
+export function validateAddressDisputedGate(data: {
+  addressDisputed?: boolean | null | unknown;
+}): boolean {
+  if (data.addressDisputed !== false) {
+    return false; // Gate fails
+  }
+  return true;
+}
+
+/**
+ * Comprehensive Document Readiness Gate integrating address dispute validation
+ */
+export function checkDocumentReadiness(data: {
+  addressDisputed?: boolean | null | unknown;
+  completenessScore?: number;
+}): { canProceed: boolean; errorBn?: string } {
+  if (data.addressDisputed !== false) {
+    return {
+      canProceed: false,
+      errorBn: "বিবাদীর ঠিকানা সম্পর্কিত বিরোধ নিষ্পত্তিহীন অবস্থায় রয়েছে (addressDisputed must be strictly false)। খসড়া প্রস্তুতের গেট স্থগিত করা হয়েছে।",
+    };
+  }
+
+  if (data.completenessScore !== undefined && data.completenessScore < 80) {
+    return {
+      canProceed: false,
+      errorBn: "মামলার সম্পূর্ণতা স্কোর পর্যাপ্ত নয়। প্রয়োজনীয় তথ্য সংগ্রহ করুন।",
+    };
+  }
+
+  return { canProceed: true };
+}

@@ -214,6 +214,16 @@ export const LimitationCard: React.FC<LimitationCardProps> = ({
             </div>
           </div>
 
+          {calculation.NEEDS_LAWYER_REVIEW_FOR_HOLIDAY_EXTENSION && (
+            <div
+              data-testid="holiday-extension-warning"
+              className="mt-2.5 flex items-center gap-2 p-2.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>আদালত বন্ধের কারণে মেয়াদ বৃদ্ধির জন্য আইনজীবীর পর্যালোচনা প্রয়োজন</span>
+            </div>
+          )}
+
           <div className="mt-2.5 text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
             <span className="font-semibold text-slate-700">আইনগত দিকনির্দেশনা: </span>
             {calculation.notesBn}

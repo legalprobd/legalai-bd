@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/auth-check";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const caseRecord = await db.getCaseById(id);
 
@@ -46,6 +50,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const body = await request.json();
     const updated = await db.updateCase(id, body);
@@ -87,6 +94,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const success = await db.deleteCase(id);
     return NextResponse.json({

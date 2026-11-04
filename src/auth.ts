@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       name: "Advocate Credentials",
@@ -22,7 +23,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               id: user.id,
               name: user.fullName,
               email: user.email,
-            };
+              isAdmin: Boolean(user.isAdmin),
+            } as any;
           }
         }
 
@@ -34,10 +36,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ) {
           const fallback = await db.getUser("demo-user");
           return {
-            id: fallback?.id || "demo-user",
+            id: fallback?.id || "demo-user-advocate-001",
             name: fallback?.fullName || "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
             email: email || "advocate@demo.bd",
-          };
+            isAdmin: true,
+          } as any;
         }
 
         return null;
@@ -51,12 +54,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.isAdmin = (user as any).isAdmin;
       }
       return token;
     },
     session({ session, token }) {
       if (token && session.user && token.id) {
         session.user.id = String(token.id);
+        (session.user as any).isAdmin = Boolean(token.isAdmin);
       }
       return session;
     },

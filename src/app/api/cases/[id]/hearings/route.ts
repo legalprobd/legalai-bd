@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { HearingItem } from "@/lib/ai/schemas";
+import { requireAuth } from "@/lib/auth-check";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const caseRecord = await db.getCaseById(id);
 
@@ -49,6 +53,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const body = await request.json();
     const { date, purpose, judgeName, outcomeBn, orderSheetBn, nextDate } = body;

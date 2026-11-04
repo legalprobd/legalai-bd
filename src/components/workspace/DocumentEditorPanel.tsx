@@ -31,12 +31,20 @@ export function DocumentEditorPanel({
   onGenerateDocument,
   isGenerating,
 }: DocumentEditorPanelProps) {
-  const [selectedDocType, setSelectedDocType] = useState<DraftDocType>("FIR");
+  const defaultDocType: DraftDocType =
+    caseRecord.category === "Civil"
+      ? "PLAINT"
+      : caseRecord.category === "Special_Tribunal"
+      ? "CR_PETITION"
+      : "FIR";
+
+  const [selectedDocType, setSelectedDocType] = useState<DraftDocType>(defaultDocType);
   const [activeTabDocId, setActiveTabDocId] = useState<string | null>(null);
   const [fontMode, setFontMode] = useState<"unicode" | "bijoy">("unicode");
   const [copied, setCopied] = useState(false);
   const [isAdvocateApproved, setIsAdvocateApproved] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [localHtml, setLocalHtml] = useState<string>("");
 
   // Determine active document
@@ -55,8 +63,12 @@ export function DocumentEditorPanel({
         setSelectedDocType(activeDoc.docType);
         setActiveTabDocId(activeDoc.id);
       }
+    } else {
+      setLocalHtml("");
+      setActiveTabDocId(null);
+      setSelectedDocType(defaultDocType);
     }
-  }, [caseRecord.documents, caseRecord.updatedAt]);
+  }, [caseRecord.id, caseRecord.documents, caseRecord.updatedAt]);
 
   // Handle font mode toggle (Unicode <-> Bijoy)
   const handleToggleFontMode = (mode: "unicode" | "bijoy") => {
@@ -79,25 +91,55 @@ export function DocumentEditorPanel({
   };
 
   const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${currentDoc?.titleBn || "Court Document"}</title>
-          <style>
-            @page { size: legal; margin: 1in; }
-            body { font-family: 'Noto Serif Bengali', serif, 'Nikosh', 'SolaimanLipi'; line-height: 1.6; }
-            .legal-doc { padding: 20px; }
-            .disclaimer { border-top: 1px solid #ccc; margin-top: 30px; padding-top: 10px; font-size: 11px; color: #555; }
-          </style>
-        </head>
-        <body>${localHtml}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    handleDownloadPdf();
+  };
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      const res = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          html: localHtml,
+          titleBn: currentDoc?.titleBn || "Court_Document",
+        }),
+      });
+
+      if (!res.ok) throw new Error("PDF Export failed");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${currentDoc?.titleBn || "Court_Document"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      // Fallback to browser print if needed
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>${currentDoc?.titleBn || "Court Document"}</title>
+              <style>
+                @page { size: legal; margin: 1in; }
+                body { font-family: 'Noto Serif Bengali', serif, 'Nikosh', 'SolaimanLipi'; line-height: 1.6; }
+                .legal-doc { padding: 20px; }
+              </style>
+            </head>
+            <body>${localHtml}</body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+      }
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleDownloadDocx = async () => {
@@ -313,12 +355,14 @@ export function DocumentEditorPanel({
 
           <button
             type="button"
-            onClick={handlePrint}
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-xs font-medium shadow-2xs"
-            title="প্রিন্ট বা পিডিএফ সেভ করুন"
+            data-testid="download-pdf-btn"
+            onClick={handleDownloadPdf}
+            disabled={isExportingPdf}
+            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-xs font-medium shadow-2xs disabled:opacity-50"
+            title="সার্ভার-সাইড A4 পিডিএফ ডাউনলোড করুন"
           >
             <Printer className="w-3.5 h-3.5 text-slate-600" />
-            <span>প্রিন্ট / PDF</span>
+            <span>{isExportingPdf ? "পিডিএফ প্রস্তুত হচ্ছে..." : "প্রিন্ট / PDF"}</span>
           </button>
         </div>
       </div>
@@ -354,12 +398,12 @@ export function DocumentEditorPanel({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handlePrint}
-              disabled={!isAdvocateApproved}
+              onClick={handleDownloadPdf}
+              disabled={!isAdvocateApproved || isExportingPdf}
               className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
             >
               <Printer className="w-4 h-4" />
-              <span>আদালতে দাখিলের জন্য প্রিন্ট</span>
+              <span>{isExportingPdf ? "পিডিএফ তৈরি হচ্ছে..." : "আদালতে দাখিলের জন্য পিডিএফ/প্রিন্ট"}</span>
             </button>
           </div>
         </div>

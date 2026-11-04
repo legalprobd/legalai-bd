@@ -93,7 +93,35 @@ export type LimitationCalculation = {
   status: "SAFE" | "APPROACHING" | "CRITICAL" | "EXPIRED" | "NO_DEADLINE";
   statusBn: string;
   notesBn: string;
+  NEEDS_LAWYER_REVIEW_FOR_HOLIDAY_EXTENSION: boolean;
 };
+
+/**
+ * Checks if a date falls on a weekend (Friday or Saturday in Bangladesh)
+ * or a recognized statutory court holiday.
+ */
+export function isCourtHolidayOrWeekend(date: Date): boolean {
+  const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 5 = Friday, 6 = Saturday
+  if (day === 5 || day === 6) {
+    return true;
+  }
+
+  // Known statutory Bangladesh court / public holidays (month is 0-indexed)
+  const month = date.getMonth();
+  const dayOfMonth = date.getDate();
+  const fixedHolidays = [
+    { m: 1, d: 21 }, // Feb 21 - Martyrs' Day
+    { m: 2, d: 17 }, // Mar 17 - Bangabandhu Birthday
+    { m: 2, d: 26 }, // Mar 26 - Independence Day
+    { m: 3, d: 14 }, // Apr 14 - Pahela Baishakh
+    { m: 4, d: 1 },  // May 1 - May Day
+    { m: 7, d: 15 }, // Aug 15 - National Mourning Day
+    { m: 11, d: 16 },// Dec 16 - Victory Day
+    { m: 11, d: 25 },// Dec 25 - Christmas
+  ];
+
+  return fixedHolidays.some((h) => h.m === month && h.d === dayOfMonth);
+}
 
 export function calculateDeadline(
   caseType: string,
@@ -124,6 +152,7 @@ export function calculateDeadline(
       status: "NO_DEADLINE",
       statusBn: "কোনো নির্দিষ্ট তামাদি নেই (বিলম্বের কারণ দর্শাতে হবে)",
       notesBn: rule.notesBn,
+      NEEDS_LAWYER_REVIEW_FOR_HOLIDAY_EXTENSION: false,
     };
   }
 
@@ -131,6 +160,11 @@ export function calculateDeadline(
   const diffMs = deadline.getTime() - now.getTime();
   const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   const isExpired = daysRemaining < 0;
+
+  // Constraint 4: If calculated deadline falls on Friday/Saturday or court holiday,
+  // DO NOT auto-extend it. Flag for lawyer review instead.
+  const isHolidayOrWeekend = isCourtHolidayOrWeekend(deadline);
+  const needsHolidayExtensionReview = isHolidayOrWeekend;
 
   let status: LimitationCalculation["status"] = "SAFE";
   let statusBn = `নিরাপদ (${daysRemaining} দিন বাকি)`;
@@ -157,5 +191,6 @@ export function calculateDeadline(
     status,
     statusBn,
     notesBn: rule.notesBn,
+    NEEDS_LAWYER_REVIEW_FOR_HOLIDAY_EXTENSION: needsHolidayExtensionReview,
   };
 }

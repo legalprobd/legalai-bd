@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { DraftRequestSchema, DraftDocType, GeneratedDocItem } from "@/lib/ai/schemas";
-import { generateDocumentByType } from "@/lib/templates/bdCourtTemplates";
+import { generateLegalDraftWithLLM } from "@/lib/ai/router";
 import { enforcePlaceholders } from "@/lib/ai/guards";
 import { convertUnicodeToBijoy } from "@/lib/utils/bijoyConverter";
+import { requireAuth } from "@/lib/auth-check";
+import { checkRateLimit, getClientIp, rateLimitExceededResponse } from "@/lib/rate-limit";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ip = getClientIp(request);
+    const { allowed, resetInSec } = checkRateLimit(`generate:${ip}`, 20, 60 * 1000);
+    if (!allowed) {
+      return rateLimitExceededResponse(resetInSec);
+    }
+
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.response!;
+
     const { id } = await params;
     const caseRecord = await db.getCaseById(id);
 
@@ -67,7 +78,12 @@ export async function POST(
       caseTitle: caseRecord.title,
     };
 
-    const generated = generateDocumentByType(docType as DraftDocType, templateData);
+    const generated = await generateLegalDraftWithLLM(
+      docType as DraftDocType,
+      caseRecord.title,
+      caseRecord.rawStatement,
+      templateData
+    );
     let finalHtml = enforcePlaceholders(generated.contentHtml);
 
     // If Bijoy font mode requested, convert Unicode text in HTML to Bijoy SutonnyMJ

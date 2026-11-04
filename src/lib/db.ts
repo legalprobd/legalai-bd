@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { CaseRecord, GeneratedDocItem, HearingItem, EvidenceFileItem, CaseNoteItem } from "./ai/schemas";
 import { generateMockCaseAnalysis } from "./ai/mock";
-import { generateFirTemplate, generateCrPetitionTemplate, generateBailPetitionTemplate } from "./templates/bdCourtTemplates";
+import { generateFirTemplate, generateCrPetitionTemplate, generateBailPetitionTemplate, generateCivilPlaintTemplate } from "./templates/bdCourtTemplates";
 
 export interface UserRecord {
   id: string;
@@ -13,6 +13,10 @@ export interface UserRecord {
   barCouncilId?: string;
   barAssociation?: string;
   courtStation: string;
+  chamberName?: string;
+  digitalSignatureUrl?: string;
+  chamberLetterheadUrl?: string;
+  isAdmin?: boolean;
   role: "OWNER" | "ADVOCATE" | "JUNIOR" | "ASSISTANT";
   chamberId?: string;
   plan: "FREE" | "PRO" | "CHAMBER";
@@ -68,6 +72,10 @@ interface DatabaseState {
   auditLogs: AuditLogRecord[];
   payments: PaymentRecord[];
   lawSections: LawSectionItem[];
+  customPrompts?: {
+    interviewerPrompt: string;
+    drafterPrompt: string;
+  };
 }
 
 function ensureDataDir() {
@@ -118,10 +126,30 @@ function initDefaultSeed(): DatabaseState {
     barCouncilId: "BC/DH/2014/8942",
     barAssociation: "ঢাকা আইনজীবী সমিতি ও সুপ্রিম কোর্ট বার",
     courtStation: "ঢাকা জজ কোর্ট ও সুপ্রিম কোর্ট",
+    chamberName: "রহমান অ্যান্ড পার্টনার্স লিগ্যাল চেম্বার",
+    isAdmin: true,
     role: "ADVOCATE",
     chamberId: demoChamberId,
     plan: "PRO",
     creditsUsed: 12,
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoJuniorUser: UserRecord = {
+    id: "user-junior-002",
+    fullName: "জুনিয়র অ্যাডভোকেট তানভীর আহমেদ",
+    email: "junior@demo.bd",
+    password: "legal123",
+    phone: "01822000000",
+    barCouncilId: "BC/DH/2022/1054",
+    barAssociation: "ঢাকা আইনজীবী সমিতি",
+    courtStation: "ঢাকা জজ কোর্ট",
+    chamberName: "রহমান অ্যান্ড পার্টনার্স লিগ্যাল চেম্বার",
+    isAdmin: false,
+    role: "JUNIOR",
+    chamberId: demoChamberId,
+    plan: "FREE",
+    creditsUsed: 2,
     createdAt: new Date().toISOString(),
   };
 
@@ -236,10 +264,88 @@ function initDefaultSeed(): DatabaseState {
     updatedAt: new Date().toISOString(),
   };
 
+  const civilStatement = "আমাদের পৈতৃক খরিদাসূত্রে প্রাপ্ত নালিশি জমিতে আমরা দীর্ঘদিন ধরে শান্তিপূর্ণ ভোগদখলে আছি। কিন্তু বিবাদী কুদ্দুস তালুকদার দলবল নিয়ে সীমানা প্রাচীর ভেঙে অনুপ্রবেশ করে এবং সেখানে অবৈধ স্থাপনা নির্মাণের পাঁয়তারা করছে ও আমাদের জমি জবরদখলের হুমকি দিচ্ছে";
+  const civilAnalysis = generateMockCaseAnalysis(civilStatement);
+  const civilPlaintHtml = generateCivilPlaintTemplate({
+    courtStation: "বিজ্ঞ সিনিয়র সহকারী জজ আদালত, ঢাকা",
+    district: "ঢাকা",
+    complainantName: "বাদী নিজে",
+    complainantDetails: "পিতা: মৃত রমিজ উদ্দিন, সাং: ধানমন্ডি, থানা: ধানমন্ডি, জেলা: ঢাকা (বাদী)",
+    accusedList: [
+      "১। কুদ্দুস তালুকদার, পিতা- অজ্ঞাত, সাং- সংশ্লিষ্ট এলাকা (১নং বিবাদী)",
+      "২। অজ্ঞাতনামা অন্যান্য সহযোগী বিবাদীগণ",
+    ],
+    incidentDate: "গতকল্য রাত্রি",
+    incidentPlace: "নালিশি জমি ও সীমানা প্রাচীর",
+    totalFinancialLoss: "নালিশি সম্পত্তির আনুমানিক মূল্য ১০,০০,০০০/- টাকা",
+    applicableLaws: civilAnalysis.applicableLaws,
+    caseTitle: civilAnalysis.caseTitleBn,
+  });
+
+  const demoCivilCase: CaseRecord = {
+    id: "case-1793702172465",
+    userId: demoUserId,
+    chamberId: demoChamberId,
+    title: civilAnalysis.caseTitleBn,
+    category: "Civil",
+    caseNumber: "দেওয়ানি মোকদ্দমা নং ৪৫/২০২৬",
+    courtName: "বিজ্ঞ সিনিয়র সহকারী জজ আদালত, ঢাকা",
+    judgeName: "বিজ্ঞ সিনিয়র সহকারী জজ",
+    filingDate: new Date().toISOString(),
+    nextHearingDate: new Date(Date.now() + 10 * 86400000).toISOString(),
+    limitationTriggerDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+    limitationDeadline: new Date(Date.now() + 1093 * 86400000).toISOString(),
+    limitationCaseType: "CIVIL_DECLARATION_TITLE",
+    courtFee: 1500,
+    priority: "HIGH",
+    clientPhone: "01711223344",
+    clientNID: "19902691234567891",
+    opposingCounsel: "অ্যাডভোকেট মো. কামরুল হাসান",
+    rawStatement: civilStatement,
+    extractedFacts: civilAnalysis.extractedFacts,
+    applicableLaws: civilAnalysis.applicableLaws,
+    completenessScore: 100,
+    status: "READY_TO_DRAFT",
+    strategicAdvice: civilAnalysis.strategicAdviceForAdvocateBn,
+    contradictionsDetected: [],
+    questions: civilAnalysis.followUpQuestions.map((q, idx) => ({
+      id: `q-civil-${idx + 1}`,
+      fieldKey: q.fieldKey,
+      questionBn: q.questionBn,
+      inputType: q.inputType,
+      optionsBn: q.optionsBn,
+      legalImportanceBn: q.legalImportanceBn,
+      answerBn: "যথাযথ তথ্য সংরক্ষিত আছে",
+      isAnswered: true,
+    })),
+    documents: [
+      {
+        id: "doc-plaint-001",
+        docType: "PLAINT",
+        titleBn: "দেওয়ানি আরজি (Plaint)",
+        contentHtml: civilPlaintHtml,
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+    hearings: [],
+    evidenceFiles: [],
+    notes: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
   const seedState: DatabaseState = {
-    users: { [demoUserId]: demoUser },
+    users: {
+      [demoUserId]: demoUser,
+      [demoJuniorUser.id]: demoJuniorUser,
+    },
     chambers: { [demoChamberId]: demoChamber },
-    cases: { [demoCaseId]: demoCase },
+    cases: {
+      [demoCaseId]: demoCase,
+      "case-1793702172465": demoCivilCase,
+    },
     auditLogs: [
       {
         id: "audit-001",
@@ -275,6 +381,11 @@ function getState(): DatabaseState {
   if (!globalState) {
     globalState = loadState();
   }
+  return globalState;
+}
+
+export function reloadDatabaseState(): DatabaseState {
+  globalState = loadState();
   return globalState;
 }
 
@@ -386,9 +497,9 @@ export const db = {
     const s = getState();
     const c = s.cases[caseId];
     if (!c || !c.hearings) return false;
-    const idx = c.hearings.findIndex((h) => h.id === hearingId);
-    if (idx < 0) return false;
-    c.hearings.splice(idx, 1);
+    const initialLen = c.hearings.length;
+    c.hearings = c.hearings.filter((h) => h.id !== hearingId);
+    if (c.hearings.length === initialLen) return false;
     c.updatedAt = new Date().toISOString();
     saveState(s);
     return true;
@@ -496,6 +607,34 @@ export const db = {
     const s = getState();
     const cleanEmail = email.toLowerCase().trim();
     return Object.values(s.users).find((u) => u.email.toLowerCase() === cleanEmail) || null;
+  },
+
+  getAllUsers: async (): Promise<UserRecord[]> => {
+    const s = getState();
+    return Object.values(s.users);
+  },
+
+  updateUser: async (userId: string, updates: Partial<UserRecord>): Promise<UserRecord | null> => {
+    const s = getState();
+    const u = s.users[userId] || Object.values(s.users).find(x => x.id === userId);
+    if (u) {
+      const updated = { ...u, ...updates };
+      s.users[u.id] = updated;
+      saveState(s);
+      return updated;
+    }
+    return null;
+  },
+
+  getCustomPrompts: async (): Promise<{ interviewerPrompt: string; drafterPrompt: string } | null> => {
+    const s = getState();
+    return s.customPrompts || null;
+  },
+
+  saveCustomPrompts: async (prompts: { interviewerPrompt: string; drafterPrompt: string }): Promise<void> => {
+    const s = getState();
+    s.customPrompts = prompts;
+    saveState(s);
   },
 
   updateUserPlan: async (userId: string, plan: "FREE" | "PRO" | "CHAMBER"): Promise<UserRecord | null> => {

@@ -31,8 +31,7 @@ function LoginForm() {
       if (res?.error) {
         setErrorMsg("ইমেইল বা পাসওয়ার্ড সঠিক নয়। দয়া করে পুনরায় চেষ্টা করুন।");
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        window.location.href = callbackUrl;
       }
     } catch {
       setErrorMsg("লগইন করতে সমস্যা হচ্ছে। ইন্টারনেট সংযোগ পরীক্ষা করুন।");
