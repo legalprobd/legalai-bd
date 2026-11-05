@@ -17,6 +17,12 @@ import {
   Search,
   ExternalLink,
   RefreshCw,
+  Server,
+  Terminal,
+  ShieldCheck,
+  UserCheck,
+  Cpu,
+  Sparkles,
 } from "lucide-react";
 
 export default function AdminClientView() {
@@ -78,10 +84,10 @@ export default function AdminClientView() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-600 font-medium text-xs">
-          <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
-          <span>অ্যাডমিন অ্যাক্সেস যাচাই করা হচ্ছে...</span>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="flex items-center gap-3 text-slate-300 font-medium text-xs">
+          <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+          <span>অ্যাডমিন নিরাপত্তা ও অনুমতি যাচাই করা হচ্ছে...</span>
         </div>
       </div>
     );
@@ -119,48 +125,95 @@ export default function AdminClientView() {
     );
   });
 
+  const totalUserCases = users.reduce((acc, u) => acc + (u.caseCount || 0), 0);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased flex flex-col">
       {/* Top Navbar */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between shadow-xs">
+      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>ড্যাশবোর্ড</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-600" />
-            <h1 className="text-base font-bold text-slate-900">LegalAI BD অ্যাডমিন ও গভর্ন্যান্স প্যানেল</h1>
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-white tracking-tight">LegalAI BD অ্যাডমিন ও গভর্ন্যান্স প্যানেল</h1>
+              <p className="text-[11px] text-slate-400">বাংলাদেশ আইন এআই মডেল, ব্যবহারকারী ও সিকিউরিটি কনসোল</p>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-3 py-1.5 rounded-full">
+            <UserCheck className="w-3.5 h-3.5" />
             সুপার অ্যাডমিন: {sessionUser.name || sessionUser.email}
           </span>
           <button
             onClick={fetchData}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition"
+            className="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
             title="রিফ্রেশ করুন"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-400" : ""}`} />
           </button>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto p-6 space-y-6">
+      <main className="max-w-7xl mx-auto p-6 sm:p-8 space-y-6 flex-1 w-full">
+        {/* Top 4 Executive Metrics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+              <span>নিবন্ধিত চেম্বার</span>
+              <Users className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div className="text-2xl font-black text-white mt-1.5">{users.length} জন</div>
+            <span className="text-[10px] text-emerald-400 font-semibold mt-1 inline-block">১০০% অ্যাক্টিভ</span>
+          </div>
+
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+              <span>মোট ফাইলিং</span>
+              <Scale className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="text-2xl font-black text-amber-400 mt-1.5">{totalUserCases} টি</div>
+            <span className="text-[10px] text-slate-400 font-semibold mt-1 inline-block">চেম্বার আরজি</span>
+          </div>
+
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+              <span>এআই প্রম্পট স্ট্যাটাস</span>
+              <Cpu className="w-4 h-4 text-purple-400" />
+            </div>
+            <div className="text-2xl font-black text-purple-400 mt-1.5">v2.0 Active</div>
+            <span className="text-[10px] text-slate-400 font-semibold mt-1 inline-block">জেমিনি + লাইভ আরএজি</span>
+          </div>
+
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+              <span>অডিট লগ এন্ট্রি</span>
+              <Activity className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div className="text-2xl font-black text-emerald-400 mt-1.5">{auditLogs.length} টি</div>
+            <span className="text-[10px] text-slate-400 font-semibold mt-1 inline-block">সিকিউরিটি ইভেন্ট</span>
+          </div>
+        </div>
+
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 shadow-xs overflow-x-auto">
           <button
             onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${
               activeTab === "users"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
             }`}
           >
             <Users className="w-4 h-4" />
@@ -169,127 +222,129 @@ export default function AdminClientView() {
 
           <button
             onClick={() => setActiveTab("prompts")}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${
               activeTab === "prompts"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
             }`}
           >
             <FileCode className="w-4 h-4" />
-            <span>AI সিস্টেম প্রম্পট কনফিগারেশন</span>
+            <span>AI সিস্টেম প্রম্পট</span>
           </button>
 
           <button
             onClick={() => setActiveTab("audit")}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer whitespace-nowrap ${
               activeTab === "audit"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-slate-400 hover:text-white hover:bg-slate-800"
             }`}
           >
             <Activity className="w-4 h-4" />
-            <span>অডিট লগ ও সিস্টেম অ্যাক্টিভিটি ({auditLogs.length})</span>
+            <span>অডিট লগ</span>
           </button>
         </div>
 
         {/* Message Alert */}
         {message && (
           <div
-            className={`p-4 rounded-xl border flex items-center gap-3 text-sm ${
+            className={`p-4 rounded-2xl border flex items-center gap-3 text-sm ${
               message.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-red-50 border-red-200 text-red-800"
+                ? "bg-emerald-950/60 border-emerald-800 text-emerald-300"
+                : "bg-rose-950/60 border-rose-800 text-rose-300"
             }`}
           >
             {message.type === "success" ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
             )}
-            <span className="font-medium">{message.text}</span>
+            <span className="font-medium text-xs">{message.text}</span>
           </div>
         )}
 
         {/* TAB 1: USERS */}
         {activeTab === "users" && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-md overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-sm font-bold text-slate-800">নিবন্ধিত আইনজীবী ও চেম্বারসমূহ</h2>
+                <Users className="w-5 h-5 text-indigo-400" />
+                <h2 className="text-sm font-bold text-white">নিবন্ধিত আইনজীবী ও চেম্বারসমূহ</h2>
               </div>
 
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   placeholder="নাম, ইমেইল বা বার কাউন্সিল নং..."
                   value={searchUser}
                   onChange={(e) => setSearchUser(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full pl-10 pr-3.5 py-2 text-xs border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-800/80 text-white placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-100/75 text-slate-700 font-semibold border-b border-slate-200">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-800/60 text-slate-400 font-semibold border-b border-slate-800">
                   <tr>
-                    <th className="px-4 py-3">আইনজীবী নাম ও ইমেইল</th>
-                    <th className="px-4 py-3">বার কাউন্সিল সনদ নং</th>
-                    <th className="px-4 py-3">কর্মস্থল আদালত / চেম্বার</th>
-                    <th className="px-4 py-3">প্ল্যান</th>
-                    <th className="px-4 py-3 text-center">তৈরিকৃত মামলা</th>
-                    <th className="px-4 py-3 text-center">অ্যাডমিন স্ট্যাটাস</th>
+                    <th className="px-5 py-3.5">আইনজীবী নাম ও ইমেইল</th>
+                    <th className="px-5 py-3.5">বার কাউন্সিল সনদ নং</th>
+                    <th className="px-5 py-3.5">কর্মস্থল আদালত / চেম্বার</th>
+                    <th className="px-5 py-3.5">প্ল্যান</th>
+                    <th className="px-5 py-3.5 text-center">তৈরিকৃত মামলা</th>
+                    <th className="px-5 py-3.5 text-center">অ্যাডমিন স্ট্যাটাস</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/75 transition">
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-slate-900">{u.fullName}</div>
-                        <div className="text-[11px] text-slate-500">{u.email}</div>
+                    <tr key={u.id} className="hover:bg-slate-800/40 transition">
+                      <td className="px-5 py-3.5">
+                        <div className="font-bold text-white">{u.fullName}</div>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">{u.email}</div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-slate-700">{u.barCouncilId || "—"}</span>
+                      <td className="px-5 py-3.5">
+                        <span className="font-mono text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                          {u.barCouncilId || "—"}
+                        </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-slate-800 font-medium">{u.courtStation || "ঢাকা জজ কোর্ট"}</div>
-                        <div className="text-[11px] text-slate-500">{u.chamberName || "ব্যক্তিগত চেম্বার"}</div>
+                      <td className="px-5 py-3.5">
+                        <div className="text-white font-medium">{u.courtStation || "ঢাকা জজ কোর্ট"}</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{u.chamberName || "ব্যক্তিগত চেম্বার"}</div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                             u.plan === "PRO"
-                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              ? "bg-purple-950/60 text-purple-300 border-purple-800"
                               : u.plan === "CHAMBER"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              : "bg-slate-100 text-slate-700 border-slate-200"
+                              ? "bg-indigo-950/60 text-indigo-300 border-indigo-800"
+                              : "bg-slate-800 text-slate-300 border-slate-700"
                           }`}
                         >
                           {u.plan}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="inline-block bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100">
+                      <td className="px-5 py-3.5 text-center">
+                        <span className="inline-block bg-indigo-950/60 text-indigo-300 font-bold px-2.5 py-1 rounded-lg border border-indigo-800">
                           {u.caseCount || 0} টি
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-5 py-3.5 text-center">
                         {u.isAdmin ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2.5 py-1 rounded-full">
                             <Shield className="w-3 h-3" />
                             অ্যাডমিন
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-400">সাধারণ</span>
+                          <span className="text-[11px] text-slate-500">সাধারণ</span>
                         )}
                       </td>
                     </tr>
                   ))}
                   {filteredUsers.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                      <td colSpan={6} className="px-5 py-10 text-center text-slate-500">
                         কোনো আইনজীবী তথ্য পাওয়া যায়নি।
                       </td>
                     </tr>
@@ -303,42 +358,42 @@ export default function AdminClientView() {
         {/* TAB 2: PROMPTS */}
         {activeTab === "prompts" && (
           <form onSubmit={handleSavePrompts} className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-md overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <FileCode className="w-5 h-5 text-indigo-600" />
-                  <h2 className="text-sm font-bold text-slate-800">
+                  <Terminal className="w-5 h-5 text-indigo-400" />
+                  <h2 className="text-sm font-bold text-white">
                     ইন্টারোগেশন প্রম্পট (INTERVIEWER_SYSTEM_PROMPT)
                   </h2>
                 </div>
-                <span className="text-xs text-slate-500">মামলার জবানবন্দি বিশ্লেষণ ও প্রশ্ন তৈরির সিস্টেম প্রম্পট</span>
+                <span className="text-xs text-slate-400">মামলার জবানবন্দি বিশ্লেষণ ও প্রশ্ন তৈরির সিস্টেম প্রম্পট</span>
               </div>
               <div className="p-6">
                 <textarea
                   rows={10}
                   value={interviewerPrompt}
                   onChange={(e) => setInterviewerPrompt(e.target.value)}
-                  className="w-full font-mono text-xs p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50 leading-relaxed"
+                  className="w-full font-mono text-xs p-4 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-950 text-slate-200 leading-relaxed"
                 />
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-md overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <FileCode className="w-5 h-5 text-indigo-600" />
-                  <h2 className="text-sm font-bold text-slate-800">
+                  <FileCode className="w-5 h-5 text-amber-400" />
+                  <h2 className="text-sm font-bold text-white">
                     ড্রাফটিং প্রম্পট (DRAFTER_SYSTEM_PROMPT)
                   </h2>
                 </div>
-                <span className="text-xs text-slate-500">কোর্ট আরজি ও এজাহার ড্রাফট তৈরির সিস্টেম প্রম্পট</span>
+                <span className="text-xs text-slate-400">কোর্ট আরজি ও এজাহার ড্রাফট তৈরির সিস্টেম প্রম্পট</span>
               </div>
               <div className="p-6">
                 <textarea
                   rows={10}
                   value={drafterPrompt}
                   onChange={(e) => setDrafterPrompt(e.target.value)}
-                  className="w-full font-mono text-xs p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50 leading-relaxed"
+                  className="w-full font-mono text-xs p-4 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-950 text-slate-200 leading-relaxed"
                 />
               </div>
             </div>
@@ -347,7 +402,7 @@ export default function AdminClientView() {
               <button
                 type="submit"
                 disabled={savingPrompts}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 {savingPrompts ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -362,41 +417,41 @@ export default function AdminClientView() {
 
         {/* TAB 3: AUDIT LOGS */}
         {activeTab === "audit" && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-sm font-bold text-slate-800">সিস্টেম সিকিউরিটি ও অডিট লগ</h2>
+                <Activity className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-sm font-bold text-white">সিস্টেম সিকিউরিটি ও অডিট লগ</h2>
               </div>
-              <span className="text-xs text-slate-500">সাম্প্রতিক কার্যক্রম ও স্পর্শকাতর ইভেন্ট ট্র্যাকিং</span>
+              <span className="text-xs text-slate-400">সাম্প্রতিক কার্যক্রম ও স্পর্শকাতর ইভেন্ট ট্র্যাকিং</span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-100/75 text-slate-700 font-semibold border-b border-slate-200">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-800/60 text-slate-400 font-semibold border-b border-slate-800">
                   <tr>
-                    <th className="px-4 py-3">সময় (Date & Time)</th>
-                    <th className="px-4 py-3">অ্যাকশন (Action)</th>
-                    <th className="px-4 py-3">ব্যবহারকারী আইডি</th>
-                    <th className="px-4 py-3">মেটাডেটা (Metadata)</th>
+                    <th className="px-5 py-3.5">সময় (Date & Time)</th>
+                    <th className="px-5 py-3.5">অ্যাকশন (Action)</th>
+                    <th className="px-5 py-3.5">ব্যবহারকারী আইডি</th>
+                    <th className="px-5 py-3.5">মেটাডেটা (Metadata)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/75 transition">
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                    <tr key={log.id} className="hover:bg-slate-800/40 transition">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-slate-400 font-mono text-[11px]">
                         {new Date(log.createdAt).toLocaleString("bn-BD")}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      <td className="px-5 py-3.5">
+                        <span className="font-bold text-indigo-300 bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-800 font-mono">
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-[11px] text-slate-600">
+                      <td className="px-5 py-3.5 font-mono text-[11px] text-slate-400">
                         {log.userId}
                       </td>
-                      <td className="px-4 py-3">
-                        <pre className="text-[11px] text-slate-600 font-mono truncate max-w-xs">
+                      <td className="px-5 py-3.5">
+                        <pre className="text-[11px] text-slate-400 font-mono truncate max-w-sm bg-slate-950 p-1.5 rounded border border-slate-800">
                           {JSON.stringify(log.metadata)}
                         </pre>
                       </td>
@@ -404,8 +459,8 @@ export default function AdminClientView() {
                   ))}
                   {auditLogs.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
-                        কোনো অডিট লগ নেই।
+                      <td colSpan={4} className="px-5 py-10 text-center text-slate-500">
+                        কোনো অডিট লগ রেকর্ড নেই।
                       </td>
                     </tr>
                   )}
