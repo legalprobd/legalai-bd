@@ -101,23 +101,23 @@ export function InterrogationPanel({
       <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-100 text-blue-700 rounded-md">
+            <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
               <Scale className="w-4 h-4" />
             </div>
             <h3 className="font-bold text-sm text-slate-800">
-              AI লিগ্যাল ইন্টারোগেশন ও ধারা মূল্যায়ন
+              ধাপ ২: প্রয়োজনীয় আইনি তথ্য ও এআই অনুসন্ধান
             </h3>
           </div>
-          <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-            ধাপ ২ (Interrogation)
+          <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+            ধাপ ২ (Questions)
           </span>
         </div>
 
         {/* Case Completeness Meter */}
-        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
           <div className="flex items-center justify-between mb-1.5 text-xs">
             <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <span>মামলার সম্পূর্ণতা স্কোর (Completeness):</span>
+              <span>মামলার তথ্য সম্পূর্ণতা:</span>
             </span>
             <span
               className={`font-extrabold ${
@@ -299,8 +299,8 @@ export function InterrogationPanel({
                 <Sparkles className="w-4 h-4" />
                 <span>
                   {isSubmitting
-                    ? "আইন ও সম্পূর্ণতা রি-ক্যালকুলেট হচ্ছে..."
-                    : "উত্তরগুলো সাবমিট ও আপডেট করুন (Submit Answers)"}
+                    ? "আইনি তথ্য যাচাই ও ধারা পুনর্মূল্যায়ন হচ্ছে..."
+                    : "উত্তরগুলো সংরক্ষণ করুন ও ৩য় ধাপে আরজি প্রস্তুত করুন →"}
                 </span>
               </button>
             </form>

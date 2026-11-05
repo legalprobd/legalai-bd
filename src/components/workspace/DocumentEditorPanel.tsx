@@ -224,12 +224,15 @@ export function DocumentEditorPanel({
       <div className="p-3 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-md">
+            <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
               <FileCheck2 className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-sm text-slate-800">
-              বাংলাদেশ কোর্ট ড্রাফট এডিটর
-            </h3>
+            <div>
+              <h3 className="font-bold text-sm text-slate-800">
+                ধাপ ৩: আদালতে দাখিলের উপযোগী আরজি ও খসড়া
+              </h3>
+              <p className="text-[10px] text-slate-500">প্রস্তুতকৃত আইনি ড্রাফট পড়ুন, এডিট করুন বা প্রিন্ট নিন</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

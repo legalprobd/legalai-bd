@@ -129,19 +129,19 @@ export function StatementInputPanel({
       <div className="p-4 border-b border-slate-200 bg-slate-50/70">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-md">
+            <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
               <FileText className="w-4 h-4" />
             </div>
             <h3 className="font-bold text-sm text-slate-800">
-              ক্লায়েন্ট জবানবন্দি ও ফ্যাক্টস
+              ধাপ ১: মক্কেলের ঘটনা ও বিবরণ
             </h3>
           </div>
-          <span className="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+          <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
             ধাপ ১ (Intake)
           </span>
         </div>
         <p className="text-xs text-slate-500">
-          ক্লায়েন্টের মৌখিক বা লিখিত বক্তব্য ইনপুট করুন
+          মক্কেলের মুখ থেকে সাধারণ ভাষায় ঘটনাটি টাইপ করুন বা মুখে বলুন
         </p>
       </div>
 
@@ -205,13 +205,13 @@ export function StatementInputPanel({
           type="button"
           onClick={handleAnalyze}
           disabled={isAnalyzing || !statement.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-medium text-xs rounded-lg shadow-sm transition-all"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
         >
           <Sparkles className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
           <span>
             {isAnalyzing
               ? "আইনি উপাদান ও ধারা বিশ্লেষণ হচ্ছে..."
-              : "জবানবন্দি বিশ্লেষণ করুন (Analyze Statement)"}
+              : "ঘটনাটি বিশ্লেষণ করুন ও ২য় ধাপে যান →"}
           </span>
         </button>
 

@@ -10,7 +10,6 @@ import {
   FileText,
   Calendar,
   CreditCard,
-  ShieldCheck,
   Clock,
   Sparkles,
   ArrowRight,
@@ -20,17 +19,12 @@ import {
   ChevronRight,
   Mic,
   ShieldAlert,
-  FileBox,
-  LogOut,
-  Settings,
-  Shield,
-  Gavel,
-  Briefcase,
-  CheckCircle2,
   FolderOpen,
+  CheckCircle2,
+  HelpCircle,
+  FileCheck,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
-import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { AppNavbar } from "@/components/common/AppNavbar";
 import { AnalyticsAndActivity } from "@/components/dashboard/AnalyticsAndActivity";
 
 export default function HomePage() {
@@ -44,21 +38,6 @@ export default function HomePage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [urgentLimitationCases, setUrgentLimitationCases] = useState<CaseRecord[]>([]);
   const [criticalOrExpiredLimitations, setCriticalOrExpiredLimitations] = useState<CaseRecord[]>([]);
-  const [currentUser, setCurrentUser] = useState<{
-    name: string;
-    email: string;
-    plan?: string;
-    isAdmin?: boolean;
-    chamberName?: string;
-    courtStation?: string;
-  }>({
-    name: "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
-    email: "advocate@demo.bd",
-    plan: "PRO",
-    isAdmin: true,
-    chamberName: "রহমান অ্যান্ড অ্যাসোসিয়েটস",
-    courtStation: "ঢাকা জজ কোর্ট ও সুপ্রিম কোর্ট",
-  });
 
   // New Case Modal State
   const [newTitle, setNewTitle] = useState("");
@@ -96,21 +75,6 @@ export default function HomePage() {
   useEffect(() => {
     fetchCases();
     fetchUpcomingHearings();
-    fetch("/api/auth/session")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.user?.name) {
-          setCurrentUser({
-            name: data.user.name,
-            email: data.user.email || "",
-            plan: data.user.plan || "PRO",
-            isAdmin: Boolean(data.user.isAdmin),
-            chamberName: data.user.chamberName || "রহমান অ্যান্ড অ্যাসোসিয়েটস",
-            courtStation: data.user.courtStation || "ঢাকা জজ কোর্ট ও সুপ্রিম কোর্ট",
-          });
-        }
-      })
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -171,7 +135,6 @@ export default function HomePage() {
     setShowNewModal(true);
   };
 
-  // Filter cases
   const filteredCases = cases.filter((c) => {
     const matchesSearch =
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -182,93 +145,27 @@ export default function HomePage() {
 
   const totalCases = cases.length;
   const interviewingCount = cases.filter((c) => c.status === "INTERVIEWING").length;
-  const totalDocumentsDrafted = cases.reduce((acc, c) => acc + (c.documents?.length || 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col antialiased">
-      {/* Top Navbar */}
-      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-950 to-indigo-900 text-amber-400 flex items-center justify-center shadow-sm border border-indigo-700/30">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-lg text-slate-950 dark:text-white tracking-tight flex items-center gap-1.5">
-                  LegalAI BD <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">v2.0</span>
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
-                ডিজিটাল চেম্বার ও লিগ্যাল ড্রাফটিং সিস্টেম
-              </p>
-            </div>
-          </div>
+      {/* Global Unified Navbar */}
+      <AppNavbar />
 
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              <Link href="/" className="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 font-bold">
-                মামলার ফাইল
-              </Link>
-              <Link href="/calendar" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                কজলিস্ট ও ক্যালেন্ডার
-              </Link>
-              <Link href="/billing" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                বিলিং ও সাবস্ক্রিপশন
-              </Link>
-              <Link href="/settings" className="px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1">
-                <Settings className="w-3.5 h-3.5" />
-                <span>চেম্বার সেটিংস</span>
-              </Link>
-              {currentUser.isAdmin && (
-                <Link href="/admin" className="px-3 py-1.5 rounded-lg text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center gap-1">
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>অ্যাডমিন</span>
-                </Link>
-              )}
-            </nav>
-
-            {/* Theme Toggle, Advocate Profile Badge & Logout */}
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-800">
-              <ThemeToggle />
-              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 font-bold flex items-center justify-center text-xs border border-indigo-200 dark:border-indigo-800 shadow-2xs">
-                {currentUser.name.slice(0, 2)}
-              </div>
-              <div className="hidden sm:block text-left text-xs leading-tight">
-                <p className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[170px]">{currentUser.name}</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[170px]">
-                  {currentUser.courtStation} • <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{currentUser.plan || "PRO"}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                title="লগআউট করুন"
-                className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
+      {/* Main Content Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
-        {/* Welcome Executive Chamber Hero */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl border border-slate-800">
-          <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-indigo-900/60 border border-indigo-700/50 px-3 py-1 rounded-full text-xs text-indigo-300 font-medium backdrop-blur-md">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>বাংলাদেশ বার কাউন্সিল প্রমিতকরণ ও বিচারিক ড্রাফটিং স্ট্যান্ডার্ড</span>
+        {/* Welcome & 3-Step Guided Header */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold border border-indigo-200 dark:border-indigo-800">
+                <Scale className="w-3.5 h-3.5 text-amber-500" />
+                <span>বিজ্ঞ আইনজীবীদের স্মার্ট আইনি সহকারী</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                 চেম্বার ড্যাশবোর্ড ও কেস ড্রাফটিং হাব
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                মক্কেলের মৌখিক বক্তব্য বা ঘটনার সারসংক্ষেপ প্রদান করুন। এআই মিসিং ফ্যাক্ট ফাইন্ডারের মাধ্যমে ধারাসমূহ পুনর্মূল্যায়ন করে ১-ক্লিকে থানার এজাহার, সি.আর. আরজি ও জামিনের আবেদন প্রস্তুত করুন।
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                মক্কেলের মুখ থেকে সাধারণ ভাষায় ঘটনা শুনুন। এআই স্বয়ংক্রিয়ভাবে আইনের উপাদান বিশ্লেষণ করে প্রশ্ন করবে এবং আদালতের জন্য সঠিক ধারার আরজি বা এজাহার তৈরি করে দেবে।
               </p>
             </div>
 
@@ -276,33 +173,88 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowNewModal(true)}
-                className="flex items-center justify-center gap-2 px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg transition-all hover:shadow-indigo-500/25 cursor-pointer active:scale-95"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs sm:text-sm font-bold shadow-md hover:shadow-indigo-500/20 transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>নতুন মামলা শুরু করুন</span>
               </button>
               <Link
                 href="/calendar"
-                className="flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold transition"
+                className="flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs sm:text-sm font-semibold transition border border-slate-200 dark:border-slate-700"
               >
-                <Calendar className="w-4 h-4 text-amber-400" />
+                <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>কোর্ট কজলিস্ট</span>
               </Link>
+            </div>
+          </div>
+
+          {/* Simple 3-Step Visual Process Guide */}
+          <div className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>৩টি সহজ ধাপে কীভাবে কাজ করবেন:</span>
+              </span>
+              <span className="text-[11px] text-slate-400">সহজ ও পরিষ্কার পদ্ধতি</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  ১
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    ঘটনার বিবরণ দিন (Intake)
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    মক্কেলের মুখ থেকে শোনা বক্তব্য বাংলায় লিখুন বা মুখে বলুন।
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  ২
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    আইনি প্রশ্নোত্তর ও জেরা (Questions)
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    কোন তথ্যের ঘাটতি আছে তা এআই খুঁজে বের করবে। অপশন বেছে উত্তর দিন।
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  ৩
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    আরজি ড্রাফট ও প্রিন্ট (Draft)
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    ১-ক্লিকে আদালতের এজাহার বা আরজি তৈরি হবে। ওয়ার্ড বা পিডিএফে প্রিন্ট করুন।
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* 1-Click Quick Demo Presets */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between mb-3.5">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>দ্রুত পরীক্ষার জন্য প্রি-লোডেড ডেমো কেস (Quick Demo Starters)</span>
+              <span>সহজে পরখ করার জন্য তৈরি করা ডেমো কেস (Quick Demo Starters)</span>
             </h3>
-            <span className="text-[11px] text-slate-400 hidden sm:inline">১-ক্লিকে ইনটেক শুরু করুন</span>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">১-ক্লিকে পরীক্ষা করুন</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             <button
               type="button"
               onClick={() =>
@@ -312,12 +264,12 @@ export default function HomePage() {
                   "Criminal"
                 )
               }
-              className="text-left p-4 rounded-xl border border-red-100 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all group cursor-pointer"
+              className="text-left p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-red-300 dark:hover:border-red-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-red-50/40 dark:hover:bg-red-950/20 transition-all group cursor-pointer"
             >
               <span className="text-[10px] font-bold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/80 px-2.5 py-0.5 rounded-full uppercase border border-red-200 dark:border-red-900">
-                ফৌজদারি (Criminal)
+                ফৌজদারি মোকদ্দমা
               </span>
-              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors">
                 ১। বসতবাড়িতে হামলা ও মারপিট (করিম মিয়া)
               </h4>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
@@ -334,12 +286,12 @@ export default function HomePage() {
                   "Special_Tribunal"
                 )
               }
-              className="text-left p-4 rounded-xl border border-blue-100 dark:border-blue-950/60 bg-blue-50/40 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all group cursor-pointer"
+              className="text-left p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all group cursor-pointer"
             >
               <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/80 px-2.5 py-0.5 rounded-full uppercase border border-blue-200 dark:border-blue-900">
-                এন.আই. অ্যাক্ট (NI Act 138)
+                এন.আই. অ্যাক্ট ১৩৮ ধারা
               </span>
-              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                 ২। চেক ডিজঅনার ও টাকা আদায়
               </h4>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
@@ -356,12 +308,12 @@ export default function HomePage() {
                   "Civil"
                 )
               }
-              className="text-left p-4 rounded-xl border border-emerald-100 dark:border-emerald-950/60 bg-emerald-50/40 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all group cursor-pointer"
+              className="text-left p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-all group cursor-pointer"
             >
               <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full uppercase border border-emerald-200 dark:border-emerald-900">
-                দেওয়ানি আরজি (Civil Plaint)
+                দেওয়ানি আরজি
               </span>
-              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100 mt-2.5 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
                 ৩। স্বত্ব ঘোষণা ও অন্তর্বর্তীকালীন নিষেধাজ্ঞা
               </h4>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
@@ -373,7 +325,7 @@ export default function HomePage() {
 
         {/* Urgent Limitations Alert Banner */}
         {criticalOrExpiredLimitations.length > 0 && (
-          <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-900 rounded-2xl p-4 text-rose-950 dark:text-rose-200 shadow-xs flex items-start justify-between gap-3">
+          <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-300 dark:border-rose-900 rounded-3xl p-5 text-rose-950 dark:text-rose-200 shadow-xs flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <div>
@@ -381,14 +333,14 @@ export default function HomePage() {
                   সতর্কতা: {criticalOrExpiredLimitations.length}টি মামলায় জরুরি তামাদি সময়সীমা বিদ্যমান!
                 </h4>
                 <p className="text-[11px] text-rose-800 dark:text-rose-300 mt-0.5">
-                  তামাদি আইনের বিধানমতে নির্ধারিত মেয়াদের মধ্যে মোকদ্দমা বা আরজি দাখিল না করিলে প্রতিকার তামাদি বারিত হইতে পারে।
+                  তামাদি আইনের বিধানমতে নির্ধারিত মেয়াদের মধ্যে মামলা বা আরজি দাখিল না করলে প্রতিকার তামাদি বারিত হতে পারে।
                 </p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {criticalOrExpiredLimitations.map((c) => (
                     <Link
                       key={c.id}
                       href={`/case/${c.id}`}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-rose-200/60 dark:bg-rose-900/50 hover:bg-rose-200 dark:hover:bg-rose-900 text-rose-900 dark:text-rose-200 px-3 py-1 rounded-lg border border-rose-300 dark:border-rose-800 transition"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-rose-200/60 dark:bg-rose-900/50 hover:bg-rose-200 dark:hover:bg-rose-900 text-rose-900 dark:text-rose-200 px-3 py-1 rounded-xl border border-rose-300 dark:border-rose-800 transition"
                     >
                       <span>{c.title}</span>
                       <ArrowRight className="w-3 h-3" />
@@ -402,7 +354,7 @@ export default function HomePage() {
 
         {/* 4 Core Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
               <span>মোট নথিভুক্ত মামলা</span>
               <FolderOpen className="w-4 h-4 text-indigo-500" />
@@ -411,7 +363,7 @@ export default function HomePage() {
             <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1 inline-block">চেম্বার ডাটাবেস</span>
           </div>
 
-          <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
               <span>খসড়া অপেক্ষমাণ</span>
               <FileText className="w-4 h-4 text-amber-500" />
@@ -420,7 +372,7 @@ export default function HomePage() {
             <span className="text-[10px] text-amber-700 dark:text-amber-500 font-semibold mt-1 inline-block">ইন্টারোগেশন প্রক্রিয়াধীন</span>
           </div>
 
-          <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
               <span>আসন্ন শুনানি (৭ দিন)</span>
               <Calendar className="w-4 h-4 text-blue-500" />
@@ -431,7 +383,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
               <span>জরুরি তামাদি (৩০ দিন)</span>
               <Clock className="w-4 h-4 text-rose-500" />
@@ -448,7 +400,7 @@ export default function HomePage() {
 
         {/* Upcoming Hearings Quick Widget (7 Days) */}
         {upcomingHearings.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -462,7 +414,7 @@ export default function HomePage() {
               {upcomingHearings.map((h) => (
                 <div
                   key={h.id}
-                  className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-3 text-xs"
+                  className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="min-w-0">
                     <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{h.caseTitle}</p>
@@ -470,7 +422,7 @@ export default function HomePage() {
                     <p className="text-[10px] text-slate-400 mt-0.5">{h.courtName || "বিজ্ঞ আদালত"}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="inline-block text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <span className="inline-block text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">
                       {new Date(h.date).toLocaleDateString("bn-BD")}
                     </span>
                     <Link
@@ -488,7 +440,7 @@ export default function HomePage() {
 
         {/* Search, Filter & Cases Grid */}
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
@@ -525,12 +477,12 @@ export default function HomePage() {
 
           {/* Cases List */}
           {loading ? (
-            <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+            <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
               <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">মামলার তালিকা লোড হচ্ছে...</p>
             </div>
           ) : filteredCases.length === 0 ? (
-            <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+            <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
               <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">কোনো মামলা পাওয়া যায়নি</p>
               <p className="text-xs text-slate-400 mt-1">
@@ -543,7 +495,7 @@ export default function HomePage() {
                 <Link
                   key={c.id}
                   href={`/case/${c.id}`}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 p-5 shadow-2xs hover:shadow-lg transition-all flex flex-col justify-between group"
+                  className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 p-6 shadow-2xs hover:shadow-lg transition-all flex flex-col justify-between group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
@@ -594,9 +546,9 @@ export default function HomePage() {
                   </div>
 
                   <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <span>{c.documents?.length || 0}টি প্রস্তুত দলিল</span>
+                    <span>{c.documents?.length || 0}টি প্রস্তুত আরজি</span>
                     <span className="text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      <span>ওয়ার্কস্পেস খুলুন</span>
+                      <span>মামলার ফাইল খুলুন</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
@@ -610,11 +562,11 @@ export default function HomePage() {
       {/* New Case Modal */}
       {showNewModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Scale className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <span>নতুন মামলা ও মক্কেল নথিভুক্তি (Intake Wizard)</span>
+                <span>নতুন মামলা ও মক্কেল নথিভুক্তি (ধাপ ১)</span>
               </h3>
               <button
                 type="button"
