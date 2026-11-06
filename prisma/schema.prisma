@@ -259,3 +259,14 @@ model NotificationLog {
   sentAt         DateTime  @default(now())
   createdAt      DateTime  @default(now())
 }
+
+model CasePrecedent {
+  id        String   @id @default(uuid())
+  citation  String   @unique
+  court     String
+  year      Int
+  titleBn   String
+  summaryBn String   @db.Text
+  keywords  String   @db.Text
+  createdAt DateTime @default(now())
+}

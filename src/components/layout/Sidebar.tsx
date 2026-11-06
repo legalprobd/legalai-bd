@@ -29,6 +29,7 @@ import {
   Swords,
   MessageSquare,
   ListOrdered,
+  Sparkles,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -60,6 +61,11 @@ export function Sidebar() {
   const dailyUtilities = [
     { label: "Court Essentials (দৈনিক স্লিপ ও দরখাস্ত)", href: "/court-essentials", icon: Scale },
     { label: "TR-4 Challan (ট্রেজারি চালান)", href: "/court-fee/tr4", icon: FileText },
+  ];
+
+  const advancedAiTools = [
+    { label: "Precedent Search (নজির ও নজিরপত্র)", href: "/precedent", icon: BookOpen },
+    { label: "Contract Reviewer (চুক্তিপত্র এআই অডিট)", href: "/contract-review", icon: FileSearch },
   ];
 
   const bottomNav = [
@@ -123,6 +129,34 @@ export function Sidebar() {
           </span>
           <nav className="mt-2 space-y-0.5">
             {dailyUtilities.map((item) => {
+              const active = isActive(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                    active
+                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${active ? "text-indigo-700" : "text-slate-600"}`} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Advanced AI Tools */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 px-3 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-indigo-600" />
+            <span>Advanced AI Tools</span>
+          </span>
+          <nav className="mt-2 space-y-0.5">
+            {advancedAiTools.map((item) => {
               const active = isActive(item.href);
               const Icon = item.icon;
               return (

@@ -321,6 +321,32 @@ async function main() {
   }
 
   console.log(`Successfully seeded ${lawSections.length} real Bangladesh Law Sections in PostgreSQL.`);
+
+  // 3. Real Supreme Court Precedents (DLR / BLC)
+  const { FAMOUS_BANGLADESH_PRECEDENTS } = await import("../src/lib/precedents/seedPrecedents");
+  for (const p of FAMOUS_BANGLADESH_PRECEDENTS) {
+    await prisma.casePrecedent.upsert({
+      where: { citation: p.citation },
+      update: {
+        court: p.court,
+        year: p.year,
+        titleBn: p.titleBn,
+        summaryBn: p.summaryBn,
+        keywords: p.keywords,
+      },
+      create: {
+        id: p.id,
+        citation: p.citation,
+        court: p.court,
+        year: p.year,
+        titleBn: p.titleBn,
+        summaryBn: p.summaryBn,
+        keywords: p.keywords,
+      },
+    });
+  }
+
+  console.log(`Successfully seeded ${FAMOUS_BANGLADESH_PRECEDENTS.length} Supreme Court Precedents in PostgreSQL.`);
 }
 
 main()

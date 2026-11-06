@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { CaseRecord, GeneratedDocItem, HearingItem, EvidenceFileItem, CaseNoteItem } from "./ai/schemas";
+import { FAMOUS_BANGLADESH_PRECEDENTS, CasePrecedentItem } from "./precedents/seedPrecedents";
 import { generateMockCaseAnalysis } from "./ai/mock";
 import { generateFirTemplate, generateCrPetitionTemplate, generateBailPetitionTemplate, generateCivilPlaintTemplate } from "./templates/bdCourtTemplates";
 
@@ -145,6 +146,7 @@ export interface DatabaseState {
   tasks: Record<string, TaskRecord>;
   trustAccounts: Record<string, TrustAccountRecord>;
   precedents: PrecedentRecord[];
+  casePrecedents?: CasePrecedentItem[];
   notifications: Record<string, NotificationLogRecord>;
   auditLogs: AuditLogRecord[];
   payments: PaymentRecord[];
@@ -176,6 +178,7 @@ function loadState(): DatabaseState {
         parsed.tasks = parsed.tasks || {};
         parsed.trustAccounts = parsed.trustAccounts || {};
         parsed.precedents = parsed.precedents || [];
+        parsed.casePrecedents = parsed.casePrecedents || FAMOUS_BANGLADESH_PRECEDENTS;
         parsed.notifications = parsed.notifications || {};
         parsed.users = parsed.users || {};
         if (!parsed.users["user-platform-owner-001"]) {
@@ -604,6 +607,7 @@ function initDefaultSeed(): DatabaseState {
       "trust-001": demoTrustAccount,
     },
     precedents: demoPrecedents,
+    casePrecedents: FAMOUS_BANGLADESH_PRECEDENTS,
     auditLogs: [
       {
         id: "audit-001",
@@ -1156,6 +1160,33 @@ export const db = {
         p.parties.toLowerCase().includes(q) ||
         p.subject.toLowerCase().includes(q) ||
         p.ratioDecidendiBn.toLowerCase().includes(q)
+    );
+  },
+
+  getCasePrecedents: async (): Promise<CasePrecedentItem[]> => {
+    const s = getState();
+    return s.casePrecedents && s.casePrecedents.length > 0
+      ? s.casePrecedents
+      : FAMOUS_BANGLADESH_PRECEDENTS;
+  },
+
+  searchCasePrecedents: async (query: string): Promise<CasePrecedentItem[]> => {
+    const s = getState();
+    const list =
+      s.casePrecedents && s.casePrecedents.length > 0
+        ? s.casePrecedents
+        : FAMOUS_BANGLADESH_PRECEDENTS;
+    const q = (query || "").toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(
+      (p) =>
+        p.citation.toLowerCase().includes(q) ||
+        p.titleBn.toLowerCase().includes(q) ||
+        p.summaryBn.toLowerCase().includes(q) ||
+        p.keywords.toLowerCase().includes(q) ||
+        p.court.toLowerCase().includes(q) ||
+        p.year.toString().includes(q) ||
+        p.category.toLowerCase().includes(q)
     );
   },
 
