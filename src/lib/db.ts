@@ -124,6 +124,19 @@ export interface PrecedentRecord {
   year: number;
 }
 
+export interface NotificationLogRecord {
+  id: string;
+  caseId: string;
+  hearingId?: string | null;
+  recipientPhone: string;
+  recipientName?: string | null;
+  message: string;
+  channel: "SMS" | "WHATSAPP";
+  status: "SENT" | "FAILED";
+  sentAt?: string;
+  createdAt: string;
+}
+
 export interface DatabaseState {
   users: Record<string, UserRecord>;
   chambers: Record<string, ChamberRecord>;
@@ -132,6 +145,7 @@ export interface DatabaseState {
   tasks: Record<string, TaskRecord>;
   trustAccounts: Record<string, TrustAccountRecord>;
   precedents: PrecedentRecord[];
+  notifications: Record<string, NotificationLogRecord>;
   auditLogs: AuditLogRecord[];
   payments: PaymentRecord[];
   lawSections: LawSectionItem[];
@@ -162,6 +176,7 @@ function loadState(): DatabaseState {
         parsed.tasks = parsed.tasks || {};
         parsed.trustAccounts = parsed.trustAccounts || {};
         parsed.precedents = parsed.precedents || [];
+        parsed.notifications = parsed.notifications || {};
         parsed.users = parsed.users || {};
         if (!parsed.users["user-platform-owner-001"]) {
           parsed.users["user-platform-owner-001"] = {
@@ -610,6 +625,7 @@ function initDefaultSeed(): DatabaseState {
         createdAt: new Date().toISOString(),
       },
     ],
+    notifications: {},
     lawSections: [],
   };
 
@@ -1215,5 +1231,34 @@ export const db = {
       hasConflict: conflicts.length > 0,
       conflicts,
     };
+  },
+
+  // Notification operations
+  getNotifications: async (caseId?: string): Promise<NotificationLogRecord[]> => {
+    const s = getState();
+    const list = Object.values(s.notifications || {});
+    if (!caseId) return list;
+    return list.filter((n) => n.caseId === caseId);
+  },
+
+  createNotificationLog: async (
+    log: Omit<NotificationLogRecord, "id" | "createdAt" | "sentAt"> & {
+      id?: string;
+      createdAt?: string;
+      sentAt?: string;
+    }
+  ): Promise<NotificationLogRecord> => {
+    const s = getState();
+    if (!s.notifications) s.notifications = {};
+    const now = new Date().toISOString();
+    const record: NotificationLogRecord = {
+      ...log,
+      id: log.id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      sentAt: log.sentAt || now,
+      createdAt: log.createdAt || now,
+    };
+    s.notifications[record.id] = record;
+    saveState(s);
+    return record;
   },
 };

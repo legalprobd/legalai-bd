@@ -57,6 +57,11 @@ export function Sidebar() {
     { label: "অনলাইন ইনটেক ফর্ম", href: "/intake", icon: FileText },
   ];
 
+  const dailyUtilities = [
+    { label: "Court Essentials (দৈনিক স্লিপ ও দরখাস্ত)", href: "/court-essentials", icon: Scale },
+    { label: "TR-4 Challan (ট্রেজারি চালান)", href: "/court-fee/tr4", icon: FileText },
+  ];
+
   const bottomNav = [
     { label: "বিলিং ও সাবস্ক্রিপশন", href: "/billing", icon: CreditCard },
     { label: "চেম্বার অ্যানালিটিক্স", href: "/analytics", icon: TrendingUp },
@@ -91,6 +96,33 @@ export function Sidebar() {
           </span>
           <nav className="mt-2 space-y-0.5">
             {mainNav.map((item) => {
+              const active = isActive(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                    active
+                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${active ? "text-indigo-700" : "text-slate-600"}`} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Daily Utilities */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">
+            Daily Utilities
+          </span>
+          <nav className="mt-2 space-y-0.5">
+            {dailyUtilities.map((item) => {
               const active = isActive(item.href);
               const Icon = item.icon;
               return (

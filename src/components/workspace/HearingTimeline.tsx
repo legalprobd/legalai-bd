@@ -14,22 +14,78 @@ import {
   X,
   AlertCircle,
   Bookmark,
+  Send,
+  MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 
 interface HearingTimelineProps {
   caseId: string;
   initialHearings: HearingItem[];
+  clientPhone?: string;
   onHearingChange?: () => void;
 }
 
 export const HearingTimeline: React.FC<HearingTimelineProps> = ({
   caseId,
   initialHearings,
+  clientPhone,
   onHearingChange,
 }) => {
   const [hearings, setHearings] = useState<HearingItem[]>(initialHearings);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Reminder modal state
+  const [reminderModalHearing, setReminderModalHearing] = useState<HearingItem | null>(null);
+  const [recipientPhone, setRecipientPhone] = useState(clientPhone || "01711000000");
+  const [reminderMessage, setReminderMessage] = useState("");
+  const [reminderChannel, setReminderChannel] = useState<"SMS" | "WHATSAPP">("SMS");
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const openReminderModal = (h: HearingItem) => {
+    const formattedDate = new Date(h.date).toLocaleDateString("bn-BD", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    setReminderModalHearing(h);
+    setRecipientPhone(clientPhone || "01711000000");
+    setReminderMessage(
+      `বিজ্ঞ আদালত: আগামী ${formattedDate} তারিখে আপনার মামলার পরবর্তী শুনানির তারিখ ধার্য করা হয়েছে (পদক্ষেপ: ${h.purpose})। অনুগ্রহপূর্বক সকাল ১০টায় বিজ্ঞ আদালতে হাজির থাকতে অনুরোধ করা হচ্ছে। - বিজ্ঞ আইনজীবী`
+    );
+  };
+
+  const handleSendReminder = async () => {
+    if (!reminderModalHearing || !recipientPhone.trim() || !reminderMessage.trim()) return;
+    try {
+      setSendingReminder(true);
+      const res = await fetch("/api/notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caseId,
+          hearingId: reminderModalHearing.id,
+          recipientPhone: recipientPhone.trim(),
+          message: reminderMessage.trim(),
+          channel: reminderChannel,
+        }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setToastMessage(json.messageBn || "মক্কেলকে SMS সফলভাবে পাঠানো হয়েছে");
+        setReminderModalHearing(null);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert(json.error?.messageBn || "বার্তা পাঠাতে ব্যর্থ হয়েছে।");
+      }
+    } catch {
+      alert("নেটওয়ার্ক সমস্যা। পুনরায় চেষ্টা করুন।");
+    } finally {
+      setSendingReminder(false);
+    }
+  };
 
   // Form state
   const [newDate, setNewDate] = useState(new Date().toISOString().split("T")[0]);
@@ -317,7 +373,16 @@ export const HearingTimeline: React.FC<HearingTimelineProps> = ({
                     {getStatusBadge(h.date)}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openReminderModal(h)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition"
+                      title="মক্কেলকে SMS / WhatsApp রিমাইন্ডার পাঠান"
+                    >
+                      <Send className="w-3 h-3 text-emerald-600" />
+                      <span>রিমাইন্ডার পাঠান</span>
+                    </button>
                     {!isEditing && (
                       <button
                         onClick={() => startEdit(h)}
@@ -440,6 +505,120 @@ export const HearingTimeline: React.FC<HearingTimelineProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-xl animate-fade-in text-sm font-medium">
+          <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Reminder Modal */}
+      {reminderModalHearing && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">শুনানির রিমাইন্ডার পাঠান</h3>
+                  <p className="text-xs text-slate-500">মক্কেলের মোবাইল নম্বরে এসএমএস বা হোয়াটসঅ্যাপ বার্তা</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReminderModalHearing(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  প্রেরণের মাধ্যম (Channel):
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setReminderChannel("SMS")}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition ${
+                      reminderChannel === "SMS"
+                        ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    SMS (মোবাইল এসএমএস)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReminderChannel("WHATSAPP")}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold border transition ${
+                      reminderChannel === "WHATSAPP"
+                        ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    WhatsApp বার্তা
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  মক্কেলের মোবাইল নম্বর:
+                </label>
+                <input
+                  type="text"
+                  value={recipientPhone}
+                  onChange={(e) => setRecipientPhone(e.target.value)}
+                  placeholder="017XXXXXXXX"
+                  className="w-full text-xs rounded-lg border border-slate-300 p-2 text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  বার্তার খসড়া (Message Template):
+                </label>
+                <textarea
+                  rows={4}
+                  value={reminderMessage}
+                  onChange={(e) => setReminderMessage(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-300 p-2 text-slate-900 leading-relaxed focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+                <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+                  <span>দৈর্ঘ্য: {reminderMessage.length} অক্ষর</span>
+                  <span>স্বয়ংক্রিয় লগ ডাটাবেসে সংরক্ষিত হবে</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setReminderModalHearing(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                disabled={sendingReminder || !recipientPhone.trim() || !reminderMessage.trim()}
+                onClick={handleSendReminder}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 transition"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{sendingReminder ? "পাঠানো হচ্ছে..." : "এখনই পাঠান"}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

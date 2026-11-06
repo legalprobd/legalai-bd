@@ -125,6 +125,7 @@ model Case {
   hearings           Hearing[]
   evidenceFiles      EvidenceFile[]
   notes              CaseNote[]
+  notifications      NotificationLog[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 }
@@ -243,4 +244,18 @@ model PromptVersion {
   createdAt DateTime @default(now())
 
   @@unique([name, version])
+}
+
+model NotificationLog {
+  id             String    @id @default(uuid())
+  caseId         String
+  case           Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  hearingId      String?
+  recipientPhone String
+  recipientName  String?
+  message        String    @db.Text
+  channel        String    @default("SMS") // "SMS" | "WHATSAPP"
+  status         String    @default("SENT") // "SENT" | "FAILED"
+  sentAt         DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 }
