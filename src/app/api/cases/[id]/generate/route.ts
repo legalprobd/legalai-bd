@@ -38,6 +38,19 @@ export async function POST(
     }
 
     const body = await request.json();
+
+    if (authCheck.role === "JUNIOR" && !body.isApprovedBySenior) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "APPROVAL_REQUIRED",
+            messageBn: "জুনিয়র অ্যাডভোকেটদের ড্রাফট চূড়ান্ত করতে সিনিয়র চেম্বার প্রধানের অনুমোদন প্রয়োজন।",
+          },
+        },
+        { status: 403 }
+      );
+    }
     const validatedReq = DraftRequestSchema.safeParse(body);
 
     if (!validatedReq.success) {
@@ -64,15 +77,15 @@ export async function POST(
       complainantName: caseRecord.extractedFacts.complainantName || "**[বাদীর নাম]**",
       complainantDetails: caseRecord.extractedFacts.complainantDetails || "পিতা: **[পিতার নাম]**, সাং: **[ঠিকানা]**",
       accusedList: caseRecord.extractedFacts.accusedList,
-      unknownAccusedCount: caseRecord.extractedFacts.unknownAccusedCount || "৪/৫",
-      incidentDate: caseRecord.extractedFacts.incidentDate || "গতকল্য রাত্রি আনুমানিক ১০:৩০ ঘটিকা",
-      incidentTime: caseRecord.extractedFacts.incidentTime || "রাত্রি ১০:৩০ ঘটিকা",
-      incidentPlace: caseRecord.extractedFacts.incidentPlace || "বাদীর নিজ বসতভিটায়",
-      weaponsUsed: caseRecord.extractedFacts.weaponsUsed,
-      injuriesAndMedical: caseRecord.extractedFacts.injuriesAndMedical || "মাথায় গুরুতর রক্তাক্ত জখম, হাসপাতালে চিকিৎসাধীন",
-      stolenOrDamagedItems: caseRecord.extractedFacts.stolenOrDamagedItems || "নগদ টাকা ও আসবাবপত্র ভাঙচুর",
-      totalFinancialLoss: caseRecord.extractedFacts.totalFinancialLoss || "১,৫০,০০০/- টাকা",
-      motiveOrPreviousDispute: caseRecord.extractedFacts.motiveOrPreviousDispute || "পূর্বশত্রুতা ও পারিবারিক বিরোধ",
+      unknownAccusedCount: caseRecord.extractedFacts.unknownAccusedCount || "",
+      incidentDate: caseRecord.extractedFacts.incidentDate || "ইং **[তারিখ]**",
+      incidentTime: caseRecord.extractedFacts.incidentTime || "",
+      incidentPlace: caseRecord.extractedFacts.incidentPlace || "বাদীর নিজ বসতবাড়ির প্রাঙ্গণে",
+      weaponsUsed: caseRecord.extractedFacts.weaponsUsed || [],
+      injuriesAndMedical: caseRecord.extractedFacts.injuriesAndMedical || "",
+      stolenOrDamagedItems: caseRecord.extractedFacts.stolenOrDamagedItems || "",
+      totalFinancialLoss: caseRecord.extractedFacts.totalFinancialLoss || "",
+      motiveOrPreviousDispute: caseRecord.extractedFacts.motiveOrPreviousDispute || "",
       witnesses: caseRecord.extractedFacts.witnesses,
       applicableLaws: caseRecord.applicableLaws,
       caseTitle: caseRecord.title,

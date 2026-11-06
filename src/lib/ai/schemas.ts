@@ -3,19 +3,19 @@ import { z } from "zod";
 export const ApplicableLawSchema = z.object({
   actNameBn: z.string().describe("আইনের নাম, যেমন: দণ্ডবিধি, ১৮৬০"),
   section: z.string().describe("ধারা নম্বর, যেমন: ১৪৩/৪৪৮/৩২৩/৩২৫/৩০৭/৩৮০"),
-  titleBn: z.string().describe("ধারার মূল অপরাধের নাম"),
-  bailableStatusBn: z.string().describe("জামিনযোগ্য বা জামিন-অযোগ্য"),
-  punishmentBn: z.string().describe("সর্বোচ্চ শাস্তির বিধান"),
-  reasoningBn: z.string().describe("কেন এই ঘটনায় এই ধারাটি প্রযোজ্য এবং কোন তথ্যের ওপর এটি নির্ভরশীল"),
-  confidence: z.enum(["LOW", "MEDIUM", "HIGH"]).default("HIGH"),
+  titleBn: z.string().describe("ধারার মূল অপরাধের নাম বা বিষয়বস্তু"),
+  bailableStatusBn: z.string().optional().default("যাচাইযোগ্য"),
+  punishmentBn: z.string().optional().default("আইনানুযায়ী"),
+  reasoningBn: z.string().optional().default("ঘটনার পারিপার্শ্বিকতার ভিত্তিতে ধারাটি প্রাথমিকভাবে সংশ্লিষ্ট।"),
+  confidence: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().default("HIGH"),
 });
 
 export const FollowUpQuestionSchema = z.object({
-  fieldKey: z.string().describe("Unique identifier like 'incident_time', 'weapon_type', 'medical_report'"),
+  fieldKey: z.string().optional().default("fact_question"),
   questionBn: z.string().describe("ক্লায়েন্টকে করার জন্য স্পষ্ট বাংলা প্রশ্ন"),
-  inputType: z.enum(["text", "select", "multiselect"]),
-  optionsBn: z.array(z.string()).describe("Quick choice options in Bengali if inputType is select or multiselect"),
-  legalImportanceBn: z.string().describe("এই প্রশ্নের উত্তর কেন জরুরি এবং এর ফলে কোন ধারা যুক্ত বা পরিবর্তন হতে পারে"),
+  inputType: z.enum(["text", "select", "multiselect"]).optional().default("text"),
+  optionsBn: z.array(z.string()).optional().default([]),
+  legalImportanceBn: z.string().optional().default("আইনগত অধিকার ও সংশ্লিষ্ট আদালত নির্ধারণের জন্য তথ্য জানা আবশ্যক।"),
 });
 
 export const ExtractedFactsSchema = z.object({
@@ -37,13 +37,28 @@ export const ExtractedFactsSchema = z.object({
 
 export const CaseAnalysisResponseSchema = z.object({
   caseTitleBn: z.string().describe("মামলার একটি সংক্ষিপ্ত শিরোনাম"),
-  caseCategory: z.enum(["Criminal", "Civil", "Family", "Special_Tribunal"]),
-  completenessScore: z.number().min(0).max(100),
-  extractedFacts: ExtractedFactsSchema,
+  caseCategory: z.string().describe("মামলার ক্যাটাগরি, যেমন Criminal, Civil, Family, Special_Tribunal অথবা Public Interest & Human Rights"),
+  completenessScore: z.number().min(0).max(100).optional().default(75),
+  extractedFacts: ExtractedFactsSchema.optional().default({
+    incidentDate: null,
+    incidentTime: null,
+    incidentPlace: null,
+    complainantName: null,
+    complainantDetails: null,
+    accusedList: [],
+    unknownAccusedCount: null,
+    weaponsUsed: [],
+    injuriesAndMedical: null,
+    stolenOrDamagedItems: null,
+    totalFinancialLoss: null,
+    motiveOrPreviousDispute: null,
+    witnesses: [],
+    policeStationAndDistrict: null,
+  }),
   applicableLaws: z.array(ApplicableLawSchema),
   followUpQuestions: z.array(FollowUpQuestionSchema),
-  strategicAdviceForAdvocateBn: z.array(z.string()).describe("অ্যাডভোকেটের জন্য গুরুত্বপূর্ণ কৌশলগত পরামর্শ ও প্রমাণ সংগ্রহের চেকলিস্ট"),
-  contradictionsDetectedBn: z.array(z.string()).default([]),
+  strategicAdviceForAdvocateBn: z.array(z.string()).optional().default([]),
+  contradictionsDetectedBn: z.array(z.string()).optional().default([]),
 });
 
 export const DraftDocTypeEnum = z.enum([
@@ -143,7 +158,7 @@ export interface CaseRecord {
   userId: string;
   chamberId?: string | null;
   title: string;
-  category: "Criminal" | "Civil" | "Family" | "Special_Tribunal";
+  category: "Criminal" | "Civil" | "Family" | "Special_Tribunal" | string;
   caseNumber?: string | null;
   courtName?: string | null;
   judgeName?: string | null;

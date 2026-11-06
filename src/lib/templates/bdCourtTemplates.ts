@@ -54,17 +54,20 @@ export function generateFirTemplate(data: TemplateData): string {
     : "১। **[১ নং আসামির নাম, পিতা ও পূর্ণাঙ্গ ঠিকানা]**<br/>২। **[২ নং আসামির নাম, পিতা ও ঠিকানা]**";
 
   const hasUnknownInList = data.accusedList?.some(a => a.includes("অজ্ঞাতনামা"));
-  const unknown = (!hasUnknownInList && data.unknownAccusedCount)
+  const unknown = (!hasUnknownInList && data.unknownAccusedCount && data.unknownAccusedCount !== "নাই")
     ? `সহ অজ্ঞাতনামা আরও ${data.unknownAccusedCount} জন।`
-    : (!hasUnknownInList ? "সহ অজ্ঞাতনামা আরও ৪/৫ জন।" : "");
+    : "";
   
   const penalSections: string[] = [];
+  let hasTobaccoAct = false;
   let hasArmsAct = false;
   let hasSrAct = false;
 
   (data.applicableLaws || []).forEach((l) => {
     const s = l.section;
-    if (s.includes("19") || s.includes("১৯") || s.includes("arms")) {
+    if (s.includes("tobacco") || s.includes("৪/৮") || l.actNameBn.includes("তামাক")) {
+      hasTobaccoAct = true;
+    } else if (s.includes("19") || s.includes("১৯") || s.includes("arms")) {
       hasArmsAct = true;
     } else if (s.includes("sr") || s.includes("৯")) {
       hasSrAct = true;
@@ -73,7 +76,10 @@ export function generateFirTemplate(data: TemplateData): string {
     }
   });
 
-  let sectionsDisplay = penalSections.length > 0 ? `দণ্ডবিধি আইনের ${penalSections.join("/")} ধারা` : "দণ্ডবিধি আইনের ১৪৩/১৪৮/৪৪৮/৪৫২/৫০৬/৩৪ ধারা";
+  let sectionsDisplay = penalSections.length > 0 ? `দণ্ডবিধি আইনের ${penalSections.join("/")} ধারা` : "দণ্ডবিধি আইনের ১৪৩/৪৪৮/৩২৩/৫০৬ ধারা";
+  if (hasTobaccoAct) {
+    sectionsDisplay = "ধূমপান ও তামাকজাত দ্রব্য ব্যবহার (নিয়ন্ত্রণ) আইন, ২০০৫ এর ৪/৮ ধারা এবং " + sectionsDisplay;
+  }
   if (hasArmsAct) {
     sectionsDisplay += " এবং অস্ত্র আইন, ১৮৭৮ এর ১৯(ক) ধারা";
   }
@@ -83,7 +89,7 @@ export function generateFirTemplate(data: TemplateData): string {
 
   const weapons = data.weaponsUsed && data.weaponsUsed.length > 0
     ? data.weaponsUsed.join(", ")
-    : "অবৈধ আগ্নেয়াস্ত্র ও মারাত্মক দেশীয় অস্ত্র";
+    : "কোনো অস্ত্র ব্যবহার হয়নি";
 
   const witnessStr = data.witnesses && data.witnesses.length > 0
     ? data.witnesses.map((w, idx) => {
@@ -92,22 +98,30 @@ export function generateFirTemplate(data: TemplateData): string {
       }).join("<br/>")
     : "১। ফরিয়াদী নিজে<br/>২। **[সাক্ষী ১-এর নাম, পিতা ও ঠিকানা]**<br/>৩। **[সাক্ষী ২-এর নাম ও ঠিকানা]**";
 
-  const lossFormatted = (data.totalFinancialLoss || "১,৫০,০০০/- টাকা")
-    .replace(/টাকা.*$/, "")
-    .trim() + " টাকা";
+  const isSmokingNuisance =
+    hasTobaccoAct ||
+    (data.caseTitle && (data.caseTitle.includes("ধূমপান") || data.caseTitle.includes("ধুমপান") || data.caseTitle.includes("সিগারেট") || data.caseTitle.includes("উপদ্রব"))) ||
+    (data.injuriesAndMedical && (data.injuriesAndMedical.includes("ধূমপান") || data.injuriesAndMedical.includes("ধুমপান"))) ||
+    (data.motiveOrPreviousDispute && (data.motiveOrPreviousDispute.includes("ধূমপান") || data.motiveOrPreviousDispute.includes("ধুমপান")));
 
-  // Check if case is about armed land grab / home takeover
+  const hasPhysicalHarm =
+    !isSmokingNuisance &&
+    data.injuriesAndMedical &&
+    !data.injuriesAndMedical.includes("নেই") &&
+    !data.injuriesAndMedical.includes("না") &&
+    (data.injuriesAndMedical.includes("জখম") ||
+      data.injuriesAndMedical.includes("রক্তাক্ত") ||
+      data.injuriesAndMedical.includes("মারপিট"));
+
   const isArmedTakeover =
-    weapons.includes("পিস্তল") ||
-    weapons.includes("রিভলবার") ||
-    weapons.includes("রিভলভার") ||
-    weapons.includes("আগ্নেয়াস্ত্র") ||
-    weapons.includes("আগ্নেয়াস্ত্র") ||
-    (data.motiveOrPreviousDispute && data.motiveOrPreviousDispute.includes("দখল")) ||
-    (data.injuriesAndMedical && (data.injuriesAndMedical.includes("বের করিয়া") || data.injuriesAndMedical.includes("প্রবেশ করিতে অপারগ")));
+    !isSmokingNuisance &&
+    (weapons.includes("পিস্তল") ||
+      weapons.includes("রিভলবার") ||
+      weapons.includes("আগ্নেয়াস্ত্র") ||
+      (data.motiveOrPreviousDispute && data.motiveOrPreviousDispute.includes("দখল")));
 
   return `
-<div class="legal-doc fir-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto">
+<div class="legal-doc fir-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm">
   <div class="text-center font-bold text-lg mb-6 underline">থানার এজাহার (FIR) দরখাস্ত</div>
 
   <div class="mb-4">
@@ -128,49 +142,95 @@ export function generateFirTemplate(data: TemplateData): string {
   </div>
 
   <div class="bg-gray-50 border p-4 rounded mb-5">
-    <p class="font-bold mb-2">আসামিগণের নাম ও ঠিকানা:</p>
+    <p class="font-bold mb-2">আসামি / অভিযুক্তের নাম ও পূর্ণ পরিচিতি:</p>
     <div class="pl-4">${accusedListStr}</div>
     ${unknown ? `<p class="mt-2 text-sm text-gray-700 italic">${unknown}</p>` : ""}
   </div>
 
   <div class="bg-blue-50/70 p-3 rounded mb-5 text-sm border border-blue-200">
-    <p><strong>ঘটনার তারিখ ও সময়:</strong> ${data.incidentDate || "ইং **[তারিখ]** তারিখ, সময় রাত্রি আনুমানিক **[সময়]** ঘটিকা।"}</p>
-    <p><strong>ঘটনাস্থল:</strong> ${data.incidentPlace || "বাদীর নিজ বসতবাড়ির প্রাঙ্গণে ও ঘরের ভিতরে।"}</p>
-    <p><strong>ধারা:</strong> ${sectionsDisplay}।</p>
+    <p><strong>ঘটনার তারিখ ও সময়:</strong> ${data.incidentDate || "ইং **[তারিখ]** তারিখ।"}</p>
+    <p><strong>ঘটনাস্থল:</strong> ${data.incidentPlace || "বাদীর নিজ বসতবাড়ির প্রাঙ্গণে।"}</p>
+    <p><strong>আইনগত ধারা:</strong> ${sectionsDisplay}।</p>
   </div>
 
   <div class="mb-5 space-y-3 text-justify">
     <p class="font-bold underline">ঘটনার বিস্তারিত বিবরণ:</p>
-    <p class="indent-8">
-      ১। ঘটনার প্রেক্ষাপট এই যে, ${data.motiveOrPreviousDispute || "বিবাদীগণের সহিত বাদীর বিরোধের জের ধরিয়া বিবাদীগণ দীর্ঘদিন যাবৎ বাদীর বসতবাড়ি দখল ও ক্ষতির ষড়যন্ত্র করিয়া আসিতেছিল।"}
-    </p>
-    <p class="indent-8">
-      ২। উল্লিখিত তারিখ ও সময়ে চিহ্নিত ও অজ্ঞাতনামা আসামিগণ বেআইনি জনতাবদ্ধে পূর্বপরিকল্পিতভাবে মারাত্মক অস্ত্রে সজ্জিত হইয়া যেমন- <strong>${weapons}</strong> সহযোগে অনধিকার বাদীর বসতবাড়ির সীমানায় ও ঘরের মধ্যে অনুপ্রবেশ করে।
-    </p>
     ${
-      isArmedTakeover
-        ? `<p class="indent-8">
-      ৩। আসামিরা হাতে থাকা <strong>${weapons}</strong> প্রদর্শন করিয়া বাদী ও পরিবারের সদস্যদের লক্ষ্য করিয়া প্রাণনাশের প্রকাশ্য হুমকি দেয় এবং ভীতি প্রদর্শন করিয়া বসতবাড়ি হইতে জোরপূর্বক বেদখল করে। আসামিরা ঘরে থাকা মূল্যবান মালামাল নিয়ন্ত্রণে লইয়া বাদীকে নিজ বসতবাড়িতে প্রবেশের পথ স্থায়ীভাবে রুদ্ধ করিয়া দেয়।
-    </p>`
-        : `<p class="indent-8">
-      ৩। বাদীর ভাই/পরিবারের সদস্য ঘর হইতে বাহির হইয়া প্রতিবাদ করিলে আসামিরা তাহাকে ঘিরিয়া ফেলে এবং হত্যার উদ্দেশ্যে শরীরের স্পর্শকাতর অঙ্গ লক্ষ্য করিয়া আঘাত করে। ফলে ${data.injuriesAndMedical || "আহত ব্যক্তি মাথায় গুরুতর রক্তাক্ত জখম প্রাপ্ত হইয়া মাটিতে লুটিয়ে পড়েন।"}
-    </p>`
+      isSmokingNuisance
+        ? `
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, অভিযুক্ত আসামি বাদীর বাসার সীমানার সামনে আসিয়া নিয়মিত বিরতিতে ও প্রকাশ্য দিবালোকে সিগারেট/তামাকজাত দ্রব্য ধূমপান করিয়া আসিতেছে।
+    </p>
+    <p class="indent-8">
+      ২। উন্মুক্ত স্থানে প্রকাশ্যে ধূমপান করার ফলে বিষাক্ত ধোঁয়া ও দুর্গন্ধ বাদীর বাসাবাড়ির অভ্যন্তরে প্রবেশ করে, যাহার ফলে পরিবারের বয়োবৃদ্ধ, শিশু এবং সাধারণ নাগরিকদের স্বাস্থ্য মারাত্মক হুমকির মুখে পতিত হইতেছে এবং পরিবেশের শান্তি বিঘ্নিত হইয়া গণউপদ্রবের সৃষ্টি হইতেছে।
+    </p>
+    <p class="indent-8">
+      ৩। বাদী ও পরিবারের সদস্যগণ একাধিকবার অভিযুক্ত আসামিকে উক্তরূপ ক্ষতিকর ধূমপান করিতে নিষেধ ও বারণ করা সত্ত্বেও আসামি কোনো কর্ণপাত না করিয়া ধৃষ্টতাপূর্ণ আচরণ প্রদর্শন করিয়া ধূমপান অব্যাহত রাখিয়াছে।
+    </p>
+    <p class="indent-8">
+      ৪। আসামির এহেন আচরণ ধূমপান ও তামাকজাত দ্রব্য ব্যবহার (নিয়ন্ত্রণ) আইন, ২০০৫ এর ধারা ৪ অনুযায়ী সম্পূর্ণ বেআইনি এবং দণ্ডবিধির ধারা ২৯০ মোতাবেক জনশান্তি বিনষ্টকারী গণউপদ্রব (Public Nuisance) অপরাধের শামিল বটে।
+    </p>
+    <p class="indent-8">
+      ৫। <strong>বিলম্বের কারণ:</strong> প্রতিবেশীদের মাধ্যমে আসামিকে বুঝাইয়া শুভবুদ্ধির উদয় করানোর চেষ্টা করায় থানায় আসিয়া লিখিত এজাহার দাখিল করিতে সামান্য বিলম্ব হইল।
+    </p>
+        `
+        : isArmedTakeover
+        ? `
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, ${data.motiveOrPreviousDispute || "বিবাদীগণের সহিত বাদীর বিরোধের জের ধরিয়া বিবাদীগণ বাদীর বসতবাড়ি দখল ও ক্ষতির ষড়যন্ত্র করিয়া আসিতেছিল।"}
+    </p>
+    <p class="indent-8">
+      ২। উল্লিখিত তারিখ ও সময়ে আসামিরা অস্ত্রশস্ত্রে সজ্জিত হইয়া যেমন- <strong>${weapons}</strong> সহযোগে বাদীর বসতবাড়ির সীমানায় অনধিকার প্রবেশ করে।
+    </p>
+    <p class="indent-8">
+      ৩। আসামিরা হাতে থাকা অস্ত্র প্রদর্শন করিয়া বাদী ও পরিবারের সদস্যদের লক্ষ্য করিয়া প্রাণনাশের হুমকি দেয় এবং বলপ্রয়োগে বসতবাড়ি হইতে বেদখল করার অপচেষ্টা চালায়।
+    </p>
+    <p class="indent-8">
+      ৪। আসামিদের তাণ্ডবে বাদী ও পরিবারের সদস্যগণ চরম নিরাপত্তাহীনতায় পতিত হন এবং আশপাশের সাক্ষীগণ আগাইয়া আসিলে আসামিরা দ্রুত স্থান ত্যাগ করে।
+    </p>
+    <p class="indent-8">
+      ৫। <strong>বিলম্বের কারণ:</strong> চরম নিরাপত্তাহীনতায় ভোগায় ও আত্মীয়-স্বজনের সহিত পরামর্শ করায় এজাহার দায়ের করিতে সামান্য বিলম্ব হইল।
+    </p>
+        `
+        : hasPhysicalHarm
+        ? `
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, ${data.motiveOrPreviousDispute || "বিবাদীদের সহিত বাদীর পূর্বশত্রুতা বিদ্যমান ছিল।"}
+    </p>
+    <p class="indent-8">
+      ২। উল্লিখিত তারিখ ও সময়ে চিহ্নিত আসামিরা বাদীর পথরোধ করিয়া মারমুখী হইয়া আক্রমণ করে এবং ${weapons !== "কোনো অস্ত্র ব্যবহার হয়নি" ? `<strong>${weapons}</strong> সহযোগে` : ""} বেধড়ক মারপিট চালায়।
+    </p>
+    <p class="indent-8">
+      ৩। মারধরের ফলে ${data.injuriesAndMedical || "শারীরিক রক্তাক্ত জখম প্রাপ্ত হইয়া মাটিতে লুটিয়ে পড়েন"} এবং উপস্থিত সাক্ষীদের সহায়তায় দ্রুত হাসপাতালে প্রাথমিক চিকিৎসা গ্রহণ করেন।
+    </p>
+    <p class="indent-8">
+      ৪। আসামিরা যাওয়ার সময় বাদীকে পুনরায় মারধর ও প্রাণনাশের চরম হুমকি প্রদান করিয়া ত্রাস সৃষ্টি করে স্থান ত্যাগ করে।
+    </p>
+    <p class="indent-8">
+      ৫। <strong>বিলম্বের কারণ:</strong> হাসপাতালে প্রাথমিক চিকিৎসা গ্রহণ ও মানসিক ধাক্কা সামলাইয়া থানায় আসিতে সামান্য বিলম্ব হইল।
+    </p>
+        `
+        : `
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, ${data.motiveOrPreviousDispute || "বিবাদী অন্যায়ভাবে বাদীর স্বাভাবিক জীবনযাপন ও চলাচলে বিঘ্ন সৃষ্টি করিয়া আসিতেছে।"}
+    </p>
+    <p class="indent-8">
+      ২। উল্লিখিত তারিখ ও সময়ে চিহ্নিত আসামি বেআইনি উদ্দেশ্যে বাদীর প্রাঙ্গণে অনধিকার অনুপ্রবেশ করিয়া অশোভন আচরণ ও বিরক্তির সৃষ্টি করে।
+    </p>
+    <p class="indent-8">
+      ৩। বাদী প্রতিবাদ করিলে আসামি ঔদ্ধত্যপূর্ণ আচরণ করিয়া হুমকি প্রদান করে এবং পরিবেশের স্বাভাবিক শান্তি বিনষ্ট করে।
+    </p>
+    <p class="indent-8">
+      ৪। <strong>বিলম্বের কারণ:</strong> স্থানীয়ভাবে বিষয়টি মীমাংসার চেষ্টা করিয়া ব্যর্থ হওয়ায় থানায় এজাহার দায়ের করিতে সামান্য বিলম্ব হইল।
+    </p>
+        `
     }
-    <p class="indent-8">
-      ৪। এই তাণ্ডবের সুযোগে আসামিগণ ঘরের আসবাবপত্র ভাঙচুর ও মূল্যবান জিনিসপত্র লুণ্ঠন করে (${data.stolenOrDamagedItems || "নগদ টাকা ও আসবাবপত্র"}) এবং প্রায় <strong>${lossFormatted}</strong> অপূরণীয় ক্ষতিসাধন করে।
-    </p>
-    <p class="indent-8">
-      ৫। বাদী ও পরিবারের চিৎকারে আশপাশের প্রত্যক্ষদর্শী সাক্ষীগণ আগাইয়া আসিলে আসামিরা ফাঁকা গুলি ও প্রাণনাশের চরম হুমকি প্রদর্শন করিয়া ত্রাস সৃষ্টি করে স্থান ত্যাগ করে।
-    </p>
-    <p class="indent-8">
-      ৬। <strong>বিলম্বের কারণ:</strong> ঘটনার আকস্মিকতায় চরম নিরাপত্তাহীনতায় ভোগায়, আত্মীয়-স্বজন ও গণ্যমান্য ব্যক্তিবর্গের সহিত পরামর্শক্রমে থানায় আসিয়া লিখিত এজাহার দায়ের করিতে সামান্য বিলম্ব হইল।
-    </p>
   </div>
 
   <div class="mb-6 text-justify">
     <p class="font-bold">অতএব প্রার্থনা:</p>
     <p class="indent-8">
-      অতএব, মহোদয় সমীপে আমার আকুল প্রার্থনা এই যে, উপরোক্ত ঘটনা সরেজমিনে তদন্তপূর্বক <strong>${sectionsDisplay}</strong> মোতাবেক এজাহার হিসেবে গ্রহণ করিয়া নিয়মিত মামলা রুজু করত আসামিদের দ্রুত গ্রেপ্তার, অবৈধ অস্ত্র উদ্ধার এবং দখল পুনরুদ্ধারে আপনার সদয় মর্জি হয়।
+      অতএব, মহোদয় সমীপে আমার বিনীত প্রার্থনা এই যে, উপরোক্ত ঘটনা সরেজমিনে তদন্তপূর্বক <strong>${sectionsDisplay}</strong> মোতাবেক এজাহার হিসেবে গ্রহণ করিয়া নিয়মিত মামলা রুজু করত আসামির বিরুদ্ধে আইনানুগ শাস্তিমূলক ব্যবস্থা গ্রহণে আপনার সদয় মর্জি হয়।
     </p>
   </div>
 
@@ -427,12 +487,331 @@ export function generateCivilPlaintTemplate(data: TemplateData): string {
 `;
 }
 
+export function generateGdTemplate(data: TemplateData): string {
+  const th = data.policeStation || "**[থানার নাম]**";
+  const dist = data.district || "ঢাকা";
+  const comp = data.complainantName || "**[আবেদনকারীর নাম]**";
+  const compDetails = data.complainantDetails || "পিতা: **[পিতার নাম]**, সাং: **[ঠিকানা]**, থানা: " + th + ", জেলা: " + dist;
+
+  const accused = (data.accusedList && data.accusedList[0]) || "**[বিবাদীর নাম ও পরিচিতি]**";
+  const cleanAccused = accused.replace(/^[০-৯0-9]+[।\.\-\s]+/, "").trim();
+
+  const isSmoking =
+    (data.caseTitle && (data.caseTitle.includes("ধূমপান") || data.caseTitle.includes("সিগারেট") || data.caseTitle.includes("উপদ্রব"))) ||
+    (data.injuriesAndMedical && data.injuriesAndMedical.includes("ধূমপান"));
+
+  const isHumanitarian =
+    (data.caseTitle && (data.caseTitle.includes("উদ্ধার") || data.caseTitle.includes("অজ্ঞান") || data.caseTitle.includes("বৃদ্ধ") || data.caseTitle.includes("মানবিক") || data.caseTitle.includes("মুমূর্ষু") || data.caseTitle.includes("জীবন রক্ষা"))) ||
+    (data.motiveOrPreviousDispute && (data.motiveOrPreviousDispute.includes("উদ্ধার") || data.motiveOrPreviousDispute.includes("অজ্ঞান") || data.motiveOrPreviousDispute.includes("মানবিক") || data.motiveOrPreviousDispute.includes("অবহেলা"))) ||
+    (data.injuriesAndMedical && (data.injuriesAndMedical.includes("অচেতন") || data.injuriesAndMedical.includes("অজ্ঞান") || data.injuriesAndMedical.includes("মুমূর্ষু")));
+
+  if (isHumanitarian) {
+    return `
+<div class="legal-doc gd-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm">
+  <div class="text-center font-bold text-lg mb-6 underline text-red-900">জরুরি উদ্ধার ও চিকিৎসা নিশ্চিতকরণে সাধারণ ডায়েরি (GD) আবেদন</div>
+
+  <div class="mb-4">
+    <p>বরাবর,</p>
+    <p class="font-semibold">অফিসার ইনচার্জ (OC),</p>
+    <p>${th} থানা, ${dist}।</p>
+  </div>
+
+  <div class="mb-4">
+    <p class="font-semibold">বিষয়: ${data.incidentPlace || "রাস্তায়"} অচেতন ও মুমূর্ষু অবস্থায় পড়ে থাকা অজ্ঞাতনামা অসুস্থ বৃদ্ধের জীবন রক্ষা, উদ্ধার ও সরকারি হাসপাতালে চিকিৎসা নিশ্চিতকরণ সংক্রান্ত সাধারণ ডায়েরি (GD) আবেদন।</p>
+  </div>
+
+  <div class="mb-4">
+    <p>জনাব,</p>
+    <p class="indent-8 text-justify">
+      বিনীত নিবেদন এই যে, আমি নিম্নস্বাক্ষরকারী <strong>${comp}</strong>, ${compDetails} একজন সচেতন নাগরিক ও মানবতাবাদী হিসেবে জনস্বার্থে আপনার থানায় হাজির হইয়া এই মর্মে জরুরি সাধারণ ডায়েরি (GD) ভুক্তির জন্য লিখিত আবেদন দাখিল করিতেছি যে:
+    </p>
+  </div>
+
+  <div class="bg-gray-50 border p-3 rounded mb-4 text-sm">
+    <p><strong>বিপন্ন ব্যক্তির পরিচয়:</strong> পরিচয়হীন অজ্ঞাতনামা অসুস্থ বয়োবৃদ্ধ পুরুষ (আনুমানিক বয়স ৬৫-৭০ বছর)</p>
+    <p><strong>ঘটনাস্থল:</strong> ${data.incidentPlace || "ময়মনসিংহের ব্রীজের মোড়ে প্রকাশ্য উন্মুক্ত স্থান"}</p>
+    <p><strong>বিপন্ন থাকার সময়কাল:</strong> ${data.incidentDate || "বিগত দুই দিন যাবত চলমান"}</p>
+  </div>
+
+  <div class="space-y-3 text-justify mb-5">
+    <p class="font-bold underline">বিবরণ:</p>
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, উল্লেখিত ঘটনাস্থলে একজন বয়োবৃদ্ধ মানুষ বিগত দুই দিন যাবত মারাত্মক অসুস্থ ও অচেতন (অজ্ঞান) অবস্থায় প্রকাশ্য উন্মুক্ত স্থানে সহায়হীনভাবে পড়িয়া রহিয়াছেন।
+    </p>
+    <p class="indent-8">
+      ২। উক্ত ব্যক্তির কোনো আত্মীয়-স্বজন বা অভিভাবক ঘটনাস্থলে উপস্থিত নাই এবং তিনি মুমূর্ষু অবস্থায় জীবন-মৃত্যুর সন্ধিক্ষণে দিনাতিপাত করিতেছেন। এ পর্যন্ত স্থানীয় কেউ বা কোনো দায়িত্বশীল কর্তৃপক্ষ কার্যকর উদ্ধার পদক্ষেপ গ্রহণ করে নাই।
+    </p>
+    <p class="indent-8">
+      ৩। আইনগত ভিত্তি:
+      (ক) গণপ্রজাতন্ত্রী বাংলাদেশের সংবিধানের অনুচ্ছেদ ১৫ ও ৩২ অনুযায়ী অন্ন, বস্ত্র, চিকিৎসা ও জীবন রক্ষার অধিকার নাগরিকের অলঙ্ঘনীয় মৌলিক অধিকার।
+      (খ) ফৌজদারি কার্যবিধি ১৮৯৮ এর ধারা ১০০ এবং পুলিশ রেগুলেশনস বেঙ্গল (PRB) বিধি ২৪৬ অনুযায়ী রাস্তায় বা উন্মুক্ত স্থানে বিপন্ন ও সহায়হীন ব্যক্তিকে উদ্ধার করিয়া হাসপাতালে প্রেরণ পুলিশের সুনির্দিষ্ট আইনগত দায়িত্ব।
+      (গ) ভবঘুরে ও নিরাশ্রয় ব্যক্তি (পুনর্বাসন) আইন ২০১১ এর ধারা ৯ ও ১১ মোতাবেক সহায়হীন নিরাশ্রয় ব্যক্তিকে সরকারি হেফাজতে গ্রহণ, বিনামূল্যে সুচিকিৎসা ও নিরাপদ পুনর্বাসন নিশ্চিতকরণের সুস্পষ্ট বিধান রহিয়াছে।
+      (ঘ) পরিচয় শনাক্তকরণ সাপেক্ষে পিতা-মাতার ভরণ-পোষণ আইন ২০১৩ এর ধারা ৩ ও ৫ অনুযায়ী কোনো স্বজন বা সন্তান কর্তৃক অবহেলা বা পরিত্যক্ত করার প্রমাণ পাওয়া গেলে আইনগত প্রতিকার গ্রহণ আবশ্যক।
+    </p>
+    <p class="indent-8">
+      ৪। কালবিলম্ব হইলে উক্ত বয়োবৃদ্ধ ব্যক্তির প্রাণহানির মারাত্মক ঝুঁকি রহিয়াছে বিধায় মানবিক কারণে বিষয়টি সাধারণ ডায়েরিভুক্ত করিয়া জরুরি পুলিশি উদ্ধার দল প্রেরণ করা আবশ্যক।
+    </p>
+  </div>
+
+  <div class="mb-6 text-justify">
+    <p class="font-bold">অতএব প্রার্থনা:</p>
+    <p class="indent-8">
+      অতএব, মহোদয় সমীপে আকুল প্রার্থনা এই যে, উপরোক্ত মানবিক বিবরণটি আপনার থানার সাধারণ ডায়েরি (GD) বহিতে তাৎক্ষণিক লিপিবদ্ধ করতঃ জরুরি পুলিশ টিম ঘটনাস্থলে প্রেরণ করিয়া উক্ত বয়োবৃদ্ধ ব্যক্তিকে উদ্ধার এবং নিকটস্থ সরকারি মেডিকেল কলেজ হাসপাতালের সমাজসেবা ইউনিট বা জরুরি বিভাগে ভর্তিপূর্বক সুচিকিৎসার ত্বরিত ব্যবস্থা গ্রহণে আপনার সদয় মর্জি হয়।
+    </p>
+  </div>
+
+  <div class="border-t pt-4 flex justify-between text-sm mt-8">
+    <div>
+      <p>সংযুক্ত: প্রত্যক্ষদর্শী সাক্ষীদের তালিকা ও জাতীয় জরুরি সেবা ৯৯৯ ট্র্যাকিং তথ্য</p>
+    </div>
+    <div class="text-right">
+      <p>তারিখ: ${formatBangladeshDate()} ইং</p>
+      <div class="h-10"></div>
+      <p class="font-bold">নিবেদক (মানবিক আবেদনকারী),</p>
+      <p>(${comp})</p>
+      <p>মোবাইল: **[মোবাইল নম্বর]**</p>
+    </div>
+  </div>
+
+  ${MANDATORY_DISCLAIMER_HTML}
+</div>
+`;
+  }
+
+  return `
+<div class="legal-doc gd-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm">
+  <div class="text-center font-bold text-lg mb-6 underline">সাধারণ ডায়েরি (GD) করার আবেদন</div>
+
+  <div class="mb-4">
+    <p>বরাবর,</p>
+    <p class="font-semibold">অফিসার ইনচার্জ (OC),</p>
+    <p>${th} থানা, ${dist}।</p>
+  </div>
+
+  <div class="mb-4">
+    <p class="font-semibold">বিষয়: সাধারণ ডায়েরি (GD) ভুক্তির আবেদন।</p>
+  </div>
+
+  <div class="mb-4">
+    <p>জনাব,</p>
+    <p class="indent-8 text-justify">
+      বিনীত নিবেদন এই যে, আমি নিম্নস্বাক্ষরকারী <strong>${comp}</strong>, ${compDetails} এই মর্মে আপনার থানায় হাজির হইয়া সাধারণ ডায়েরি (GD) ভুক্তির জন্য লিখিত বিবরণ দাখিল করিতেছি যে:
+    </p>
+  </div>
+
+  <div class="bg-gray-50 border p-3 rounded mb-4 text-sm">
+    <p><strong>বিবাদী / অভিযুক্ত ব্যক্তি:</strong> ${cleanAccused}</p>
+    <p><strong>ঘটনার স্থান ও সময়:</strong> ${data.incidentPlace || "বাদীর বাসার বারান্দার সামনে"}, ${data.incidentDate || "প্রতিদিন চলমান"}</p>
+  </div>
+
+  <div class="space-y-3 text-justify mb-5">
+    <p class="font-bold underline">বিবরণ:</p>
+    ${
+      isSmoking
+        ? `
+    <p class="indent-8">
+      ১। বিবাদী ${cleanAccused} নিয়মিত বিরতিতে বাদীর বাসার বারান্দার সামনে আসিয়া প্রকাশ্যে ধূমপান করিয়া বিষাক্ত ধোঁয়া ও দুর্গন্ধ ছড়ায়।
+    </p>
+    <p class="indent-8">
+      ২। এতে বাদীর পরিবারের অসুস্থ সদস্য, বয়োবৃদ্ধ ও শিশুদের স্বাস্থ্য মারাত্মক হুমকির সম্মুখীন হইতেছে এবং জনস্বাস্থ্যের ক্ষতি সাধন ও গণউপদ্রব সৃষ্টি হইতেছে।
+    </p>
+    <p class="indent-8">
+      ৩। বাদী বারবার বিবাদীকে শান্তভাবে অনুরোধ ও নিষেধ করা সত্ত্বেও বিবাদী উক্ত বারণ উপেক্ষা করিয়া ঔদ্ধত্যপূর্ণ আচরণ ও শান্তি বিনষ্ট করিয়া চলিতেছে।
+    </p>
+    <p class="indent-8">
+      ৪। বিষয়টি ভবিষ্যতে বড় ধরনের আইন-শৃঙ্খলা অবনতির আশঙ্কা সৃষ্টি করায় আইনগত ভবিষ্যৎ পদক্ষেপ ও রেকর্ড সংরক্ষণের স্বার্থে থানায় সাধারণ ডায়েরি (GD) করা আবশ্যক হইল।
+    </p>
+        `
+        : `
+    <p class="indent-8">
+      ১। ঘটনার প্রেক্ষাপট এই যে, ${data.motiveOrPreviousDispute || (data.caseTitle ? `আবেদনকারীর অভিযোগের বিবরণ: ${data.caseTitle}` : "বিবাদী বা সংশ্লিষ্ট পক্ষ বেআইনিভাবে এলাকার শান্তিশৃঙ্খলা বিঘ্নিত করিয়া আসিতেছে।")}
+    </p>
+    <p class="indent-8">
+      ২। ${data.injuriesAndMedical ? `অভিযোগের পরিণতি ও ক্ষতি: ${data.injuriesAndMedical}।` : "উল্লেখিত ঘটনার ফলে বাদী চরম নিরাপত্তাহীনতা ও ক্ষয়ক্ষতির সম্মুখীন হইতেছেন।"}
+    </p>
+    <p class="indent-8">
+      ৩। ভবিষ্যতে কোনো রূপ অপ্রীতিকর ঘটনা ঘটিলে তার আইনগত দায়দায়িত্ব সংশ্লিষ্ট দায়ী ব্যক্তিদের উপর বর্তাইবে বিধায় ঘটনাটি সাধারণ ডায়েরিভুক্ত রাখা প্রয়োজন।
+    </p>
+        `
+    }
+  </div>
+
+  <div class="mb-6 text-justify">
+    <p class="font-bold">অতএব প্রার্থনা:</p>
+    <p class="indent-8">
+      অতএব, মহোদয় সমীপে বিনীত প্রার্থনা এই যে, উপরোক্ত বিবরণটি আপনার থানার সাধারণ ডায়েরি (GD) বহিতে লিপিবদ্ধ করতঃ প্রয়োজনীয় আইনানুগ অনুসন্ধান ও বিবাদীকে সতর্কীকরণের ব্যবস্থা গ্রহণে আপনার সদয় মর্জি হয়।
+    </p>
+  </div>
+
+  <div class="border-t pt-4 flex justify-between text-sm mt-8">
+    <div>
+      <p>সংযুক্ত: প্রত্যক্ষদর্শী সাক্ষীদের তালিকা</p>
+    </div>
+    <div class="text-right">
+      <p>তারিখ: ${formatBangladeshDate()} ইং</p>
+      <div class="h-10"></div>
+      <p class="font-bold">নিবেদক,</p>
+      <p>(${comp})</p>
+      <p>মোবাইল: **[মোবাইল নম্বর]**</p>
+    </div>
+  </div>
+
+  ${MANDATORY_DISCLAIMER_HTML}
+</div>
+`;
+}
+
+export function generateLegalNoticeTemplate(data: TemplateData): string {
+  const dist = data.district || "ঢাকা";
+  const comp = data.complainantName || "**[মক্কেলের নাম]**";
+  const accused = (data.accusedList && data.accusedList[0]) || "**[প্রাপকের নাম]**";
+
+  return `
+<div class="legal-doc notice-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm">
+  <div class="text-center mb-6">
+    <h2 class="text-base font-bold text-red-900">রেজিস্ট্রি এডি ডাকযোগে প্রেরিত</h2>
+    <h1 class="text-xl font-bold underline mt-1">আইনি নোটিশ (LEGAL NOTICE)</h1>
+  </div>
+
+  <div class="border p-3 rounded mb-4 text-sm bg-gray-50">
+    <p><strong>প্রেরক (বিজ্ঞ আইনজীবী মারফত):</strong> ${comp}, সাং: **[ঠিকানা]**, জেলা: ${dist}।</p>
+    <p class="my-1 font-semibold text-center text-slate-500">বনাম</p>
+    <p><strong>প্রাপক:</strong> ${accused}, সাং: **[ঠিকানা]**, জেলা: ${dist}।</p>
+  </div>
+
+  <div class="space-y-3 text-justify text-sm">
+    <p>জনাব,</p>
+    <p class="indent-8">
+      আমার উল্লেখিত মক্কেলের প্রদত্ত সুনির্দিষ্ট নির্দেশনা ও ক্ষমতাবলে আমি আপনাকে এই মর্মে আইনি নোটিশ প্রদান করিতেছি যে:
+    </p>
+    <p class="indent-8">
+      ১। আপনি প্রাপক আমার মক্কেলের নিকট হইতে অর্থ গ্রহণ করিয়া অথবা নালিশি বিরোধে অন্যায় সুযোগ গ্রহণ করিয়া আইন অমান্য করিয়া আসিতেছেন।
+    </p>
+    <p class="indent-8">
+      ২। আপনার এহেন কার্য দেশের প্রচলিত আইনের পরিপন্থী ও দণ্ডনীয় অপরাধ বটে, যাহার ফলে আমার মক্কেল অপূরণীয় আর্থিক ও মানসিক ক্ষতির সম্মুখীন হইয়াছেন।
+    </p>
+    <p class="indent-8">
+      ৩। অতএব, অত্র লিগ্যাল নোটিশ প্রাপ্তির ৩০ (ত্রিশ) দিনের মধ্যে নালিশি দাবি ও দেনা পরিশোধ করিয়া বিষয়টির শান্তিপূর্ণ নিষ্পত্তি করিবেন। অন্যথায় আপনার বিরুদ্ধে বিজ্ঞ উপযুক্ত আদালতে দেওয়ানি ও ফৌজদারি মোকদ্দমা দায়ের করা হইবে।
+    </p>
+  </div>
+
+  <div class="text-right text-sm mt-8">
+    <p>আমার মক্কেলের পক্ষে ও নির্দেশে-</p>
+    <div class="h-10"></div>
+    <p class="font-bold">**[বিজ্ঞ অ্যাডভোকেট]**</p>
+    <p>বাংলাদেশ সুপ্রিম কোর্ট / জেলা আইনজীবী সমিতি, ${dist}।</p>
+    <p>তারিখ: ${formatBangladeshDate()}</p>
+  </div>
+
+  ${MANDATORY_DISCLAIMER_HTML}
+</div>
+`;
+}
+
+export function generateAffidavitTemplate(data: TemplateData): string {
+  const dist = data.district || "ঢাকা";
+  const comp = data.complainantName || "**[হলফকারীর নাম]**";
+
+  return `
+<div class="legal-doc affidavit-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm">
+  <div class="text-center mb-6">
+    <h2 class="text-lg font-bold underline">হলফনামা (AFFIDAVIT)</h2>
+    <p class="text-xs">প্রথম শ্রেণীর বিজ্ঞ ম্যাজিস্ট্রেট / নোটারি পাবলিক, বাংলাদেশ এর সম্মুখে</p>
+  </div>
+
+  <div class="space-y-3 text-justify text-sm">
+    <p class="indent-8">
+      আমি <strong>${comp}</strong>, পিতা: **[পিতার নাম]**, বয়স: **[বয়স]** বছর, জাতীয়তা: বাংলাদেশী (জন্মসূত্রে), ধর্ম: **[ধর্ম]**, পেশা: **[পেশা]**, সাং: **[ঠিকানা]**, জেলা: ${dist}—এই মর্মে শপথপূর্বক ঘোষণা করিতেছি যে:
+    </p>
+    <p class="indent-8">
+      ১। আমি অত্র মোকদ্দমার বাদী/দরখাস্তকারী বটে এবং ঘটনার সার্বিক তথ্যাদি সম্পর্কে সম্যক অবগত রহিয়াছি।
+    </p>
+    <p class="indent-8">
+      ২। অত্র দরখাস্তে উল্লেখিত যাবতীয় বিবরণ আমার জ্ঞান ও বিশ্বাসমতে সত্য এবং সঠিক। ইহাতে কোনো প্রকার অসত্য বা তথ্য গোপন করা হয় নাই।
+    </p>
+  </div>
+
+  <div class="border-t pt-4 flex justify-between text-sm mt-8">
+    <div>
+      <p>অ্যাডভোকেট কর্তৃক সনাক্তকৃত</p>
+      <div class="h-8"></div>
+      <p class="font-bold">সনাক্তকারী অ্যাডভোকেট</p>
+    </div>
+    <div class="text-right">
+      <p>হলফকারীর স্বাক্ষর: ____________________</p>
+      <p>তারিখ: ${formatBangladeshDate()}</p>
+    </div>
+  </div>
+
+  ${MANDATORY_DISCLAIMER_HTML}
+</div>
+`;
+}
+
+export function generateVakalatnamaTemplate(data: TemplateData): string {
+  const dist = data.district || "ঢাকা";
+  const comp = data.complainantName || "**[মক্কেলের নাম]**";
+  const accused = (data.accusedList && data.accusedList[0]) || "**[বিপক্ষ]**";
+
+  return `
+<div class="legal-doc vakalatnama-doc font-serif leading-relaxed text-gray-900 p-8 bg-white max-w-4xl mx-auto shadow-sm border">
+  <div class="text-center mb-6">
+    <h1 class="text-2xl font-bold tracking-wider">ওকালতনামা (VAKALATNAMA)</h1>
+    <p class="text-sm font-semibold">মোকাম বিজ্ঞ আদালত, ${dist}।</p>
+  </div>
+
+  <div class="border p-3 rounded mb-4 text-xs bg-gray-50 flex justify-between">
+    <div><strong>বাদী / আবেদনকারী:</strong> ${comp}</div>
+    <div><strong>- বনাম -</strong></div>
+    <div><strong>বিবাদী / আসামি:</strong> ${accused}</div>
+  </div>
+
+  <div class="space-y-2 text-xs text-justify leading-relaxed">
+    <p class="indent-6">
+      উক্ত মোকদ্দমায় আমার/আমাদের পক্ষে আইনানুগ কার্যক্রম পরিচালনা, আরজি দাখিল, জবাব পেশ, সাক্ষ্য প্রদান, আপোষনামা স্বাক্ষর এবং আদালত হইতে নকল ও অর্থ উত্তোলনের ক্ষমতা প্রদানপূর্বক বিজ্ঞ অ্যাডভোকেট মহোদয়কে নিযুক্ত করিলাম।
+    </p>
+    <p class="indent-6">
+      আইনজীবীর কৃত সকল আইনানুগ কার্য আমার/আমাদের নিজ কৃত কার্যের ন্যায় গণ্য হইবে।
+    </p>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 border-t pt-6 mt-8 text-xs">
+    <div>
+      <p class="font-bold">আমি নিয়োগ গ্রহণ করিলাম:</p>
+      <div class="h-10"></div>
+      <p>স্বাক্ষর: _________________________</p>
+      <p class="font-semibold">বিজ্ঞ অ্যাডভোকেট</p>
+      <p>সদস্য, জেলা আইনজীবী সমিতি, ${dist}।</p>
+    </div>
+    <div class="text-right">
+      <p class="font-bold">মক্কেল / নির্বাহকের স্বাক্ষর বা টিপসহি:</p>
+      <div class="h-10"></div>
+      <p>স্বাক্ষর: _________________________</p>
+      <p>নাম: ${comp}</p>
+    </div>
+  </div>
+
+  ${MANDATORY_DISCLAIMER_HTML}
+</div>
+`;
+}
+
 export function generateDocumentByType(docType: DraftDocType, data: TemplateData): { titleBn: string; contentHtml: string } {
   let res: { titleBn: string; contentHtml: string };
   switch (docType) {
     case "FIR":
       res = { titleBn: "থানার এজাহার (FIR) খসড়া", contentHtml: generateFirTemplate(data) };
       break;
+    case "GD": {
+      const isHumanitarian =
+        (data.caseTitle && (data.caseTitle.includes("উদ্ধার") || data.caseTitle.includes("অজ্ঞান") || data.caseTitle.includes("বৃদ্ধ") || data.caseTitle.includes("মানবিক") || data.caseTitle.includes("মুমূর্ষু"))) ||
+        (data.motiveOrPreviousDispute && (data.motiveOrPreviousDispute.includes("উদ্ধার") || data.motiveOrPreviousDispute.includes("অজ্ঞান") || data.motiveOrPreviousDispute.includes("মানবিক") || data.motiveOrPreviousDispute.includes("অবহেলা")));
+      res = {
+        titleBn: isHumanitarian ? "জরুরি উদ্ধার ও চিকিৎসার ব্যবস্থা গ্রহণের জন্য থানায় মানবিক আবেদন (GD)" : "থানায় সাধারণ ডায়েরি (GD) আবেদন",
+        contentHtml: generateGdTemplate(data),
+      };
+      break;
+    }
     case "CR_PETITION":
       res = { titleBn: "বিজ্ঞ ম্যাজিস্ট্রেট আদালতে সি.আর. মামলার আরজি", contentHtml: generateCrPetitionTemplate(data) };
       break;
@@ -449,6 +828,21 @@ export function generateDocumentByType(docType: DraftDocType, data: TemplateData
         titleBn: "অস্থায়ী নিষেধাজ্ঞার আবেদন (Order 39 Rule 1-2 CPC)",
         contentHtml: generateCivilPlaintTemplate(data),
       };
+      break;
+    case "LEGAL_NOTICE":
+      res = { titleBn: "রেজিস্ট্রি এডি ডাকযোগে আইনি নোটিশ", contentHtml: generateLegalNoticeTemplate(data) };
+      break;
+    case "AFFIDAVIT":
+      res = { titleBn: "বিজ্ঞ আদালতে হলফনামা (Affidavit)", contentHtml: generateAffidavitTemplate(data) };
+      break;
+    case "VAKALATNAMA":
+      res = { titleBn: "আইনজীবীর ওকালতনামা ফরম", contentHtml: generateVakalatnamaTemplate(data) };
+      break;
+    case "TIME_PETITION":
+      res = { titleBn: "সময়ের আবেদন (Time Petition)", contentHtml: generateBailPetitionTemplate(data) };
+      break;
+    case "NARAJI":
+      res = { titleBn: "নারাজি পিটিশন (Naraji Petition)", contentHtml: generateCrPetitionTemplate(data) };
       break;
     default:
       res = { titleBn: `${docType} খসড়া`, contentHtml: generateFirTemplate(data) };

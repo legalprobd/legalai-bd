@@ -17,7 +17,7 @@ export interface UserRecord {
   digitalSignatureUrl?: string;
   chamberLetterheadUrl?: string;
   isAdmin?: boolean;
-  role: "OWNER" | "ADVOCATE" | "JUNIOR" | "ASSISTANT";
+  role: "PLATFORM_OWNER" | "CHAMBER_OWNER" | "OWNER" | "ADVOCATE" | "JUNIOR" | "ASSISTANT";
   chamberId?: string;
   plan: "FREE" | "PRO" | "CHAMBER";
   creditsUsed: number;
@@ -65,10 +65,73 @@ export interface LawSectionItem {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
 
-interface DatabaseState {
+export interface ClientRecord {
+  id: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  nidOrPassport?: string;
+  address: string;
+  cases: string[]; // caseIds
+  retainerBalance: number;
+  status: "ACTIVE" | "INACTIVE";
+  notes?: string;
+  createdAt: string;
+}
+
+export interface TaskRecord {
+  id: string;
+  title: string;
+  caseId?: string;
+  caseTitle?: string;
+  assignedTo: string; // user name or id
+  assignedBy: string;
+  dueDate: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  status: "TODO" | "IN_PROGRESS" | "COMPLETED";
+  notes?: string;
+  createdAt: string;
+}
+
+export interface TrustTransaction {
+  id: string;
+  date: string;
+  type: "DEPOSIT" | "DISBURSEMENT";
+  amount: number;
+  purpose: string;
+  voucherRef?: string;
+}
+
+export interface TrustAccountRecord {
+  id: string;
+  clientId: string;
+  clientName: string;
+  caseId?: string;
+  totalDeposited: number;
+  totalDisbursed: number;
+  balance: number;
+  transactions: TrustTransaction[];
+  createdAt: string;
+}
+
+export interface PrecedentRecord {
+  id: string;
+  citation: string;
+  court: string;
+  parties: string;
+  subject: string;
+  ratioDecidendiBn: string;
+  year: number;
+}
+
+export interface DatabaseState {
   users: Record<string, UserRecord>;
   chambers: Record<string, ChamberRecord>;
   cases: Record<string, CaseRecord>;
+  clients: Record<string, ClientRecord>;
+  tasks: Record<string, TaskRecord>;
+  trustAccounts: Record<string, TrustAccountRecord>;
+  precedents: PrecedentRecord[];
   auditLogs: AuditLogRecord[];
   payments: PaymentRecord[];
   lawSections: LawSectionItem[];
@@ -94,7 +157,31 @@ function loadState(): DatabaseState {
     try {
       const raw = fs.readFileSync(DATA_FILE, "utf-8").trim();
       if (raw && raw.length > 2) {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        parsed.clients = parsed.clients || {};
+        parsed.tasks = parsed.tasks || {};
+        parsed.trustAccounts = parsed.trustAccounts || {};
+        parsed.precedents = parsed.precedents || [];
+        parsed.users = parsed.users || {};
+        if (!parsed.users["user-platform-owner-001"]) {
+          parsed.users["user-platform-owner-001"] = {
+            id: "user-platform-owner-001",
+            fullName: "সুপার প্ল্যাটফর্ম অ্যাডমিন (Chief Architect)",
+            email: "owner@legalai.bd",
+            password: "owner123",
+            phone: "01999000000",
+            barCouncilId: "BC/SUPER/001",
+            barAssociation: "বাংলাদেশ সুপ্রিম কোর্ট বার",
+            courtStation: "বাংলাদেশ সুপ্রিম কোর্ট",
+            chamberName: "LegalAI BD Platform HQ",
+            isAdmin: true,
+            role: "PLATFORM_OWNER",
+            plan: "CHAMBER",
+            creditsUsed: 0,
+            createdAt: new Date().toISOString(),
+          };
+        }
+        return parsed;
       }
     } catch {
       // ignore and reseed
@@ -116,6 +203,24 @@ function initDefaultSeed(): DatabaseState {
   const demoUserId = "demo-user-advocate-001";
   const demoChamberId = "chamber-rahman-associates";
   const demoCaseId = "case-karim-miah-001";
+
+  const demoOwnerId = "user-platform-owner-001";
+  const demoOwnerUser: UserRecord = {
+    id: demoOwnerId,
+    fullName: "সুপার প্ল্যাটফর্ম অ্যাডমিন (Chief Architect)",
+    email: "owner@legalai.bd",
+    password: "owner123",
+    phone: "01999000000",
+    barCouncilId: "BC/SUPER/001",
+    barAssociation: "বাংলাদেশ সুপ্রিম কোর্ট বার",
+    courtStation: "বাংলাদেশ সুপ্রিম কোর্ট",
+    chamberName: "LegalAI BD Platform HQ",
+    isAdmin: true,
+    role: "PLATFORM_OWNER",
+    plan: "CHAMBER",
+    creditsUsed: 0,
+    createdAt: new Date().toISOString(),
+  };
 
   const demoUser: UserRecord = {
     id: demoUserId,
@@ -336,16 +441,154 @@ function initDefaultSeed(): DatabaseState {
     updatedAt: new Date().toISOString(),
   };
 
+  const demoClientId = "client-001";
+  const demoClient: ClientRecord = {
+    id: demoClientId,
+    fullName: "মো. আব্দুল করিম",
+    phone: "01812345678",
+    email: "karim.client@gmail.com",
+    nidOrPassport: "19882691234567890",
+    address: "বাড়ি নং ৪২, রোড ৭, ধানমন্ডি, ঢাকা",
+    cases: [demoCaseId],
+    retainerBalance: 35000,
+    status: "ACTIVE",
+    notes: "নিয়মিত মামলার ফি প্রদান করেন, বিশ্বস্ত মক্কেল।",
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoClient2: ClientRecord = {
+    id: "client-002",
+    fullName: "মো. কুদ্দুস তালুকদার",
+    phone: "01711223344",
+    email: "kuddus.talukdar@gmail.com",
+    nidOrPassport: "19902691234567891",
+    address: "গ্রাম: রূপনগর, থানা: মিরপুর, ঢাকা",
+    cases: ["case-1793702172465"],
+    retainerBalance: 15000,
+    status: "ACTIVE",
+    notes: "জমির স্বত্ব ঘোষণা মোকদ্দমা চলমান।",
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoTask1: TaskRecord = {
+    id: "task-001",
+    title: "করিম মিয়ার সি.আর. মামলার নারাজি ও নালিশি আরজি রিভিশন ড্রাফটিং",
+    caseId: demoCaseId,
+    caseTitle: "বাসায় হামলা ও ভাঙচুর — করিম মিয়া",
+    assignedTo: "জুনিয়র অ্যাডভোকেট তানভীর আহমেদ",
+    assignedBy: "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
+    dueDate: new Date(Date.now() + 2 * 86400000).toISOString(),
+    priority: "HIGH",
+    status: "IN_PROGRESS",
+    notes: "দণ্ডবিধির ৩২৬ ও ৩০৭ ধারার উপাদান অন্তর্ভুক্ত করবেন।",
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoTask2: TaskRecord = {
+    id: "task-002",
+    title: "ডিএইচএমসি ইনজুরি সার্টিফিকেট ও কোর্ট ডায়েরি (CD) নকল উত্তোলন",
+    caseId: demoCaseId,
+    caseTitle: "বাসায় হামলা ও ভাঙচুর — করিম মিয়া",
+    assignedTo: "মো. খোরশেদ আলম (প্রধান ক্লার্ক / মুহুরি)",
+    assignedBy: "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
+    dueDate: new Date(Date.now() + 1 * 86400000).toISOString(),
+    priority: "HIGH",
+    status: "TODO",
+    notes: "আদালতের নকলখানা থেকে ৩ কপি সার্টিফাইড নকল তুলবেন।",
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoTrustAccount: TrustAccountRecord = {
+    id: "trust-001",
+    clientId: demoClientId,
+    clientName: "মো. আব্দুল করিম",
+    caseId: demoCaseId,
+    totalDeposited: 50000,
+    totalDisbursed: 15000,
+    balance: 35000,
+    transactions: [
+      {
+        id: "tx-001",
+        date: new Date(Date.now() - 5 * 86400000).toISOString(),
+        type: "DEPOSIT",
+        amount: 50000,
+        purpose: "মামলা পরিচালনা ও কোর্ট ফি বাবদ অগ্রিম রিটেইনার ফি জমা",
+        voucherRef: "VR-2026-081",
+      },
+      {
+        id: "tx-002",
+        date: new Date(Date.now() - 2 * 86400000).toISOString(),
+        type: "DISBURSEMENT",
+        amount: 15000,
+        purpose: "আদালত ফি, প্রসেস সার্ভার খরচ ও ওকালতনামা স্ট্যাম্প ক্রয়",
+        voucherRef: "VR-2026-094",
+      },
+    ],
+    createdAt: new Date().toISOString(),
+  };
+
+  const demoPrecedents: PrecedentRecord[] = [
+    {
+      id: "prec-001",
+      citation: "54 DLR (AD) 124",
+      court: "Supreme Court (Appellate Division)",
+      parties: "Abdul Latif vs. The State",
+      subject: "Criminal Trespass with deadly weapon & ingredients of Section 452 Penal Code",
+      ratioDecidendiBn: "অনধিকার গৃহপ্রবেশকালে মারাত্মক অস্ত্রের উপস্থিতি ও ভীতি প্রদর্শনের প্রস্তুতি প্রমাণিত হইলে জামিন-অযোগ্য ধারা ৪৫২ পূর্ণাঙ্গভাবে প্রযোজ্য হইবে।",
+      year: 2002,
+    },
+    {
+      id: "prec-002",
+      citation: "18 BLC 240",
+      court: "Supreme Court (High Court Division)",
+      parties: "Standard Bank Ltd. vs. Rahim Textile Mills",
+      subject: "Cheque Dishonour under Section 138 of NI Act & 30-Day Mandatory Statutory Notice",
+      ratioDecidendiBn: "ব্যাংক মেমো স্লিপ প্রাপ্তির ৩০ দিনের মধ্যে রেজিস্ট্রি ডাকযোগে নোটিশ প্রেরণের আইনি প্রমাণ ছাড়া এনআই অ্যাক্টের ১৩৮ ধারায় মামলা অগ্রহণযোগ্য।",
+      year: 2013,
+    },
+    {
+      id: "prec-003",
+      citation: "62 DLR 450",
+      court: "Supreme Court (High Court Division)",
+      parties: "Begum vs. Chowdhury",
+      subject: "Specific Relief Act Section 42 & 54: Title Declaration and Mandatory Injunction",
+      ratioDecidendiBn: "শান্তিপূর্ণ ভোগদখলে বিঘ্ন সৃষ্টি ও সীমানা প্রাচীর ভাঙার স্পষ্ট হুমকি থাকিলে দেওয়ানি কার্যবিধির অর্ডার ৩৯ রুল ১-২ অনুযায়ী তাৎক্ষণিক স্থিতাবস্থা মঞ্জুরযোগ্য।",
+      year: 2010,
+    },
+    {
+      id: "prec-004",
+      citation: "21 BLC (AD) 89",
+      court: "Supreme Court (Appellate Division)",
+      parties: "State vs. Joynal Abedin & Others",
+      subject: "Distinction between Penal Code Section 307 (Attempt to Murder) and Section 326 (Grievous Hurt)",
+      ratioDecidendiBn: "সংবেদনশীল অঙ্গ যেমন মাথায় ধারালো অস্ত্র দ্বারা আঘাত ও হাড়ের জখম সৃষ্টি করিলে আসামির প্রাণনাশের স্পষ্ট অভিপ্রায় অনুমান করা যায় এবং ধারা ৩০৭ প্রযুক্ত হইবে।",
+      year: 2016,
+    },
+  ];
+
   const seedState: DatabaseState = {
     users: {
       [demoUserId]: demoUser,
       [demoJuniorUser.id]: demoJuniorUser,
+      [demoOwnerId]: demoOwnerUser,
     },
     chambers: { [demoChamberId]: demoChamber },
     cases: {
       [demoCaseId]: demoCase,
       "case-1793702172465": demoCivilCase,
     },
+    clients: {
+      [demoClientId]: demoClient,
+      "client-002": demoClient2,
+    },
+    tasks: {
+      "task-001": demoTask1,
+      "task-002": demoTask2,
+    },
+    trustAccounts: {
+      "trust-001": demoTrustAccount,
+    },
+    precedents: demoPrecedents,
     auditLogs: [
       {
         id: "audit-001",
@@ -679,6 +922,110 @@ export const db = {
     return s.auditLogs;
   },
 
+  // Chamber Operations
+  getChambers: async (): Promise<ChamberRecord[]> => {
+    const s = getState();
+    return Object.values(s.chambers);
+  },
+
+  getChamber: async (chamberId: string): Promise<ChamberRecord | null> => {
+    const s = getState();
+    return s.chambers[chamberId] || null;
+  },
+
+  getChamberUsers: async (chamberId: string): Promise<UserRecord[]> => {
+    const s = getState();
+    return Object.values(s.users).filter((u) => u.chamberId === chamberId);
+  },
+
+  updateChamber: async (chamberId: string, updates: Partial<ChamberRecord>): Promise<ChamberRecord | null> => {
+    const s = getState();
+    const existing = s.chambers[chamberId];
+    if (!existing) return null;
+    const updated = { ...existing, ...updates };
+    s.chambers[chamberId] = updated;
+    saveState(s);
+    return updated;
+  },
+
+  inviteJuniorToChamber: async (
+    chamberId: string,
+    email: string,
+    fullName: string
+  ): Promise<UserRecord> => {
+    const s = getState();
+    const existingUser = Object.values(s.users).find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      existingUser.chamberId = chamberId;
+      existingUser.role = "JUNIOR";
+      saveState(s);
+      return existingUser;
+    }
+    const newJunior: UserRecord = {
+      id: `user-junior-${Date.now()}`,
+      fullName,
+      email: email.toLowerCase().trim(),
+      password: "legal123",
+      phone: "01700000000",
+      courtStation: "ঢাকা জজ কোর্ট",
+      chamberName: s.chambers[chamberId]?.name || "চেম্বার",
+      isAdmin: false,
+      role: "JUNIOR",
+      chamberId,
+      plan: "FREE",
+      creditsUsed: 0,
+      createdAt: new Date().toISOString(),
+    };
+    s.users[newJunior.id] = newJunior;
+    saveState(s);
+    return newJunior;
+  },
+
+  // Platform Super Admin Operations
+  getPlatformStats: async () => {
+    const s = getState();
+    const chambersList = Object.values(s.chambers);
+    const usersList = Object.values(s.users);
+    const casesList = Object.values(s.cases);
+    const paymentsList = s.payments || [];
+
+    const totalRevenue = paymentsList
+      .filter((p) => p.status === "COMPLETED")
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+    let totalDocuments = 0;
+    for (const c of casesList) {
+      if (c.documents && Array.isArray(c.documents)) {
+        totalDocuments += c.documents.length;
+      }
+    }
+
+    const totalCredits = usersList.reduce((sum, u) => sum + (u.creditsUsed || 0), 0);
+    const totalAiTokensUsed = totalCredits * 1250;
+
+    const chambersWithMeta = chambersList.map((ch) => {
+      const chamberUsers = usersList.filter((u) => u.chamberId === ch.id);
+      const chamberCases = casesList.filter((c) => c.chamberId === ch.id || c.userId === ch.ownerId);
+      return {
+        ...ch,
+        totalUsers: chamberUsers.length,
+        totalCases: chamberCases.length,
+      };
+    });
+
+    return {
+      totalChambers: chambersList.length,
+      totalUsers: usersList.length,
+      totalCases: casesList.length,
+      totalRevenue,
+      totalDocuments,
+      totalAiTokensUsed,
+      chambers: chambersWithMeta,
+      recentPayments: paymentsList.slice(0, 10),
+      recentAuditLogs: s.auditLogs.slice(0, 10),
+    };
+  },
+
   // Payments
   addPayment: async (payment: PaymentRecord): Promise<PaymentRecord> => {
     const s = getState();
@@ -690,5 +1037,183 @@ export const db = {
   getPayments: async (): Promise<PaymentRecord[]> => {
     const s = getState();
     return s.payments;
+  },
+
+  // Client Management
+  getClients: async (): Promise<ClientRecord[]> => {
+    const s = getState();
+    return Object.values(s.clients || {});
+  },
+
+  getClientById: async (id: string): Promise<ClientRecord | null> => {
+    const s = getState();
+    return s.clients?.[id] || null;
+  },
+
+  createClient: async (client: Omit<ClientRecord, "id" | "createdAt">): Promise<ClientRecord> => {
+    const s = getState();
+    s.clients = s.clients || {};
+    const newId = "client-" + Date.now();
+    const newClient: ClientRecord = {
+      ...client,
+      id: newId,
+      createdAt: new Date().toISOString(),
+    };
+    s.clients[newId] = newClient;
+    saveState(s);
+    return newClient;
+  },
+
+  // Task Delegation
+  getTasks: async (): Promise<TaskRecord[]> => {
+    const s = getState();
+    return Object.values(s.tasks || {});
+  },
+
+  createTask: async (task: Omit<TaskRecord, "id" | "createdAt">): Promise<TaskRecord> => {
+    const s = getState();
+    s.tasks = s.tasks || {};
+    const newId = "task-" + Date.now();
+    const newTask: TaskRecord = {
+      ...task,
+      id: newId,
+      createdAt: new Date().toISOString(),
+    };
+    s.tasks[newId] = newTask;
+    saveState(s);
+    return newTask;
+  },
+
+  updateTaskStatus: async (taskId: string, status: "TODO" | "IN_PROGRESS" | "COMPLETED"): Promise<TaskRecord | null> => {
+    const s = getState();
+    if (s.tasks && s.tasks[taskId]) {
+      s.tasks[taskId].status = status;
+      saveState(s);
+      return s.tasks[taskId];
+    }
+    return null;
+  },
+
+  // Trust Accounts (IOLTA)
+  getTrustAccounts: async (): Promise<TrustAccountRecord[]> => {
+    const s = getState();
+    return Object.values(s.trustAccounts || {});
+  },
+
+  addTrustTransaction: async (
+    trustAccountId: string,
+    tx: { type: "DEPOSIT" | "DISBURSEMENT"; amount: number; purpose: string; voucherRef?: string }
+  ): Promise<TrustAccountRecord | null> => {
+    const s = getState();
+    const acc = s.trustAccounts?.[trustAccountId];
+    if (!acc) return null;
+    const newTx: TrustTransaction = {
+      id: "tx-" + Date.now(),
+      date: new Date().toISOString(),
+      ...tx,
+    };
+    acc.transactions.unshift(newTx);
+    if (tx.type === "DEPOSIT") {
+      acc.totalDeposited += tx.amount;
+      acc.balance += tx.amount;
+    } else {
+      acc.totalDisbursed += tx.amount;
+      acc.balance -= tx.amount;
+    }
+    saveState(s);
+    return acc;
+  },
+
+  // Precedents & Legal Research
+  getPrecedents: async (): Promise<PrecedentRecord[]> => {
+    const s = getState();
+    return s.precedents || [];
+  },
+
+  searchPrecedents: async (query: string): Promise<PrecedentRecord[]> => {
+    const s = getState();
+    const q = (query || "").toLowerCase().trim();
+    if (!q) return s.precedents || [];
+    return (s.precedents || []).filter(
+      (p) =>
+        p.citation.toLowerCase().includes(q) ||
+        p.parties.toLowerCase().includes(q) ||
+        p.subject.toLowerCase().includes(q) ||
+        p.ratioDecidendiBn.toLowerCase().includes(q)
+    );
+  },
+
+  // Conflict of Interest Ethics Checker
+  checkConflict: async (searchQuery: string): Promise<{
+    hasConflict: boolean;
+    conflicts: Array<{
+      type: "CURRENT_CLIENT" | "OPPOSING_PARTY" | "OPPOSING_COUNSEL" | "ACCUSED" | "WITNESS";
+      caseId: string;
+      caseTitle: string;
+      matchedName: string;
+      roleBn: string;
+      ethicalAdviceBn: string;
+    }>;
+  }> => {
+    const s = getState();
+    const q = (searchQuery || "").toLowerCase().trim();
+    if (!q || q.length < 2) return { hasConflict: false, conflicts: [] };
+
+    const conflicts: Array<{
+      type: "CURRENT_CLIENT" | "OPPOSING_PARTY" | "OPPOSING_COUNSEL" | "ACCUSED" | "WITNESS";
+      caseId: string;
+      caseTitle: string;
+      matchedName: string;
+      roleBn: string;
+      ethicalAdviceBn: string;
+    }> = [];
+
+    // Check existing clients
+    for (const client of Object.values(s.clients || {})) {
+      if (client.fullName.toLowerCase().includes(q) || (client.phone && client.phone.includes(q))) {
+        conflicts.push({
+          type: "CURRENT_CLIENT",
+          caseId: client.cases[0] || "general",
+          caseTitle: "চেম্বারের সংরক্ষিত বর্তমান ক্লায়েন্ট ফাইল",
+          matchedName: client.fullName,
+          roleBn: "বর্তমান নথিবদ্ধ মক্কেল",
+          ethicalAdviceBn: "বাংলাদেশ বার কাউন্সিল ক্যাননস অফ প্রফেশনাল কন্ডাক্ট অনুযায়ী একই পক্ষের বিপক্ষে কোনো নতুন মোকদ্দমায় প্রতিনিধিত্ব করা গুরুতর পেশাগত অসদাচরণ।",
+        });
+      }
+    }
+
+    // Check existing cases (opposing counsel, accused, complainants)
+    for (const c of Object.values(s.cases || {})) {
+      if (c.opposingCounsel && c.opposingCounsel.toLowerCase().includes(q)) {
+        conflicts.push({
+          type: "OPPOSING_COUNSEL",
+          caseId: c.id,
+          caseTitle: c.title,
+          matchedName: c.opposingCounsel,
+          roleBn: "প্রতিপক্ষের নিযুক্তীয় আইনজীবী",
+          ethicalAdviceBn: "উক্ত ব্যক্তি অন্য মামলায় আপনার প্রতিপক্ষের বিজ্ঞ আইনজীবী। নৈতিক কারণে ও পেশাগত নিরপেক্ষতা বজায় রাখতে বিষয়টি পর্যালোচনা আবশ্যক।",
+        });
+      }
+
+      if (c.extractedFacts?.accusedList) {
+        for (const accused of c.extractedFacts.accusedList) {
+          if (accused.toLowerCase().includes(q)) {
+            conflicts.push({
+              type: "ACCUSED",
+              caseId: c.id,
+              caseTitle: c.title,
+              matchedName: accused,
+              roleBn: "চলমান মামলার চিহ্নিত আসামি/বিবাদী",
+              ethicalAdviceBn: "চলমান মামলার আসামিপক্ষে বা বাদীর বিপক্ষে নতুনভাবে নিয়োগগ্রহণ এথিক্যাল স্বার্থের সংঘাত (Conflict of Interest) তৈরি করবে।",
+            });
+          }
+        }
+      }
+    }
+
+    return {
+      hasConflict: conflicts.length > 0,
+      conflicts,
+    };
   },
 };

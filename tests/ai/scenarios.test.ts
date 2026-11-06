@@ -70,4 +70,89 @@ describe("Stage 4 End-to-End Legal Scenarios Verification", () => {
     expect(sections.some((s) => s.includes("১৪৮") || s.includes("148"))).toBe(true);
     expect(sections.some((s) => s.includes("৪৫২") || s.includes("452"))).toBe(true);
   });
+
+  it("Scenario 6: Public Smoking & Public Nuisance (বারান্দার সামনে প্রকাশ্যে সিগারেট খায় শামীম)", () => {
+    const statement = "প্রতিদিন আমার বাসার বারান্দার সামনে প্রকাশ্যে সিগারেট খায় শামীম। আমি বারবার তাকে মানা করার পরও সে এটা করেই যাচ্ছে।";
+    const analysis = generateMockCaseAnalysis(statement);
+
+    expect(analysis.caseCategory).toBe("Criminal");
+    // Accused must accurately be Shamim, NOT unknown robbery attackers
+    expect(analysis.extractedFacts.accusedList.some((a) => a.includes("শামীম"))).toBe(true);
+    expect(analysis.extractedFacts.unknownAccusedCount).toBe("নাই");
+    // Must NOT hallucinate weapons or robbery!
+    expect(analysis.extractedFacts.weaponsUsed.length).toBe(0);
+    expect(analysis.extractedFacts.totalFinancialLoss).toBe("কোনো আর্থিক ক্ষতি নেই");
+    expect(analysis.extractedFacts.injuriesAndMedical).toContain("ধূমপান");
+
+    // Laws must be Tobacco Control Act / Penal Code 290 (Public Nuisance)
+    const sections = analysis.applicableLaws.map((l) => l.section);
+    expect(sections.some((s) => s.includes("৪/৮") || s.includes("tobacco"))).toBe(true);
+    expect(sections.some((s) => s.includes("২৯০") || s.includes("290"))).toBe(true);
+
+    // Questions must be relevant to public nuisance, not hospital medical injury or gold loot!
+    const questionsText = analysis.followUpQuestions.map((q) => q.questionBn).join(" ");
+    expect(questionsText).not.toContain("লোহার রড");
+    expect(questionsText).not.toContain("দা / চাপাতি");
+  });
+
+  it("Scenario 7: Group Smoking in front of Balcony (১০ জন মানুষ বারান্দার সামনে ধুমপান করেন)", () => {
+    const statement = "১০ জন মানুষ প্রতিদিন ামার বাসার বারান্দার সামনে ধুমপান করেন। বারবার মানা ক্রয়া স্বত্ত্বেও তারা প্রতিদিন ই এসে ধুমপান করেন।";
+    const analysis = generateMockCaseAnalysis(statement);
+
+    expect(analysis.caseCategory).toBe("Criminal");
+    // Accused must be smokers, NEVER armed land grabbers
+    expect(analysis.extractedFacts.accusedList[0]).toContain("ধূমপায়ী");
+    expect(analysis.extractedFacts.accusedList.join(" ")).not.toContain("সশস্ত্র দখলদার");
+
+    // Zero weapons, zero injuries, zero robbery
+    expect(analysis.extractedFacts.weaponsUsed.length).toBe(0);
+    expect(analysis.extractedFacts.totalFinancialLoss).toBe("কোনো আর্থিক ক্ষতি নেই");
+    expect(analysis.extractedFacts.injuriesAndMedical).toContain("ধূমপান");
+
+    // Laws must include Tobacco control and 290 public nuisance + 143 unlawful assembly
+    const sections = analysis.applicableLaws.map((l) => l.section);
+    expect(sections.some((s) => s.includes("৪/৮") || s.includes("tobacco"))).toBe(true);
+    expect(sections.some((s) => s.includes("২৯০") || s.includes("290"))).toBe(true);
+    expect(sections.some((s) => s.includes("১৪৩") || s.includes("143"))).toBe(true);
+
+    // Questions must NOT ask about weapons or robbery
+    const questionsText = analysis.followUpQuestions.map((q) => q.questionBn).join(" ");
+    expect(questionsText).not.toContain("লোহার রড");
+    expect(questionsText).not.toContain("দা / চাপাতি");
+  });
+
+  it("Scenario 8: Humanitarian Emergency Rescue (ময়মনসিংহের ব্রীজের মোড়ে একজন বৃদ্ধ মানুষ অজ্ঞান অবস্থায় পড়ে আছে)", () => {
+    const statement = "ময়মনসিংহের ব্রীজের মোড়ে একজন বৃদ্ধ মানুষ অজ্ঞান অবস্থায় পড়ে আছে দুই দিন যাবত। কেউ কোন পদক্ষেপ নিচ্ছে না। আমি আইনী পদক্ষেপ নিতে চাই।";
+    const analysis = generateMockCaseAnalysis(statement);
+
+    // Exact Title & Category
+    expect(analysis.caseTitleBn).toBe("ময়মনসিংহে রাস্তায় পড়ে থাকা অজ্ঞাতনামা অসুস্থ বৃদ্ধের জীবন রক্ষা, উদ্ধার ও চিকিৎসা নিশ্চিতকরণ সংক্রান্ত আবেদন");
+    expect(analysis.caseCategory).toBe("Public Interest & Human Rights / Miscellaneous");
+
+    // Location detection
+    expect(analysis.extractedFacts.incidentPlace).toContain("ময়মনসিংহের ব্রীজের মোড়ে");
+    expect(analysis.extractedFacts.policeStationAndDistrict).toContain("ময়মনসিংহ");
+
+    // Zero weapons, zero violence, zero robbery
+    expect(analysis.extractedFacts.weaponsUsed.length).toBe(0);
+    expect(analysis.extractedFacts.totalFinancialLoss).toBeNull();
+    expect(analysis.extractedFacts.injuriesAndMedical).toContain("অচেতন");
+
+    // Gold-standard statutory laws
+    const sections = analysis.applicableLaws.map((l) => l.section);
+    expect(sections.some((s) => s.includes("অনুচ্ছেদ ১৫ ও ৩২"))).toBe(true);
+    expect(sections.some((s) => s.includes("ধারা ১০০ ও পুলিশ রেগুলেশনস বেঙ্গল (PRB) বিধি ২৪৬"))).toBe(true);
+    expect(sections.some((s) => s.includes("ধারা ৩ ও ৫"))).toBe(true);
+    expect(sections.some((s) => s.includes("ধারা ৯ ও ১১"))).toBe(true);
+
+    // 4 Targeted Questions
+    const questionsText = analysis.followUpQuestions.map((q) => q.questionBn).join(" ");
+    expect(questionsText).toContain("৯৯৯");
+    expect(questionsText).toContain("স্বজনের ফোন নম্বর");
+    expect(questionsText).toContain("কোতোয়ালী মডেল থানা");
+    expect(questionsText).toContain("ময়মনসিংহ মেডিকেল কলেজ হাসপাতালের সমাজসেবা ইউনিট");
+    expect(questionsText).not.toContain("লোহার রড");
+    expect(questionsText).not.toContain("দা / চাপাতি");
+    expect(questionsText).not.toContain("জমিজমা");
+  });
 });

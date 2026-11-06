@@ -25,12 +25,14 @@ interface StatementInputPanelProps {
   caseRecord: CaseRecord;
   onUpdateStatement: (statement: string) => Promise<void>;
   isAnalyzing: boolean;
+  onNextStep?: () => void;
 }
 
 export function StatementInputPanel({
   caseRecord,
   onUpdateStatement,
   isAnalyzing,
+  onNextStep,
 }: StatementInputPanelProps) {
   const [statement, setStatement] = useState(caseRecord.rawStatement || "");
   const [isRecording, setIsRecording] = useState(false);
@@ -381,6 +383,19 @@ export function StatementInputPanel({
             </div>
           </div>
         </div>
+
+        {/* Step 1 Bottom Action */}
+        {onNextStep && (
+          <div className="pt-2 pb-4">
+            <button
+              type="button"
+              onClick={onNextStep}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer"
+            >
+              <span>২য় ধাপে যান (আইনি মূল্যায়ন ও জেরা) →</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

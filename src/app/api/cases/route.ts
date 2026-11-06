@@ -59,32 +59,57 @@ export async function POST(request: Request) {
     const analysis = await analyzeCaseStatement(rawStatement);
 
     const newCaseId = "case-" + Date.now();
-    const effectiveUserId = userId || "demo-user-advocate-001";
+    const effectiveUserId = userId || authCheck.userId || "demo-user-advocate-001";
+    const creatorUser = await db.getUser(effectiveUserId);
+    const effectiveChamberId = creatorUser?.chamberId || null;
 
     const effectiveCategory = category || analysis.caseCategory || "Criminal";
-    const primaryDocType: DraftDocType =
-      effectiveCategory === "Civil"
-        ? "PLAINT"
-        : effectiveCategory === "Special_Tribunal"
-        ? "CR_PETITION"
-        : "FIR";
+    const isHumanitarian =
+      analysis.caseTitleBn.includes("উদ্ধার") ||
+      analysis.caseTitleBn.includes("অজ্ঞান") ||
+      analysis.caseTitleBn.includes("বৃদ্ধ") ||
+      analysis.caseTitleBn.includes("মানবিক");
+
+    const isNuisance =
+      analysis.caseTitleBn.includes("ধূমপান") ||
+      analysis.caseTitleBn.includes("সিগারেট") ||
+      analysis.caseTitleBn.includes("উপদ্রব") ||
+      analysis.caseTitleBn.includes("শব্দ") ||
+      analysis.caseTitleBn.includes("গান");
+
+    const isLabour = analysis.caseTitleBn.includes("বেতন") || analysis.caseTitleBn.includes("পাওনা");
+    const isUnknown = analysis.caseTitleBn.includes("আইনগত পরামর্শ") || analysis.applicableLaws.length === 0;
+
+    const primaryDocType: DraftDocType = isHumanitarian || isNuisance || isUnknown
+      ? "GD"
+      : isLabour
+      ? "LEGAL_NOTICE"
+      : effectiveCategory === "Civil"
+      ? "PLAINT"
+      : effectiveCategory === "Special_Tribunal"
+      ? "CR_PETITION"
+      : "FIR";
 
     const courtStation =
       effectiveCategory === "Civil"
         ? "বিজ্ঞ সিনিয়র সহকারী জজ আদালত"
         : "বিজ্ঞ চীফ জুডিসিয়াল ম্যাজিস্ট্রেট আদালত";
 
+    const psAndDist = (analysis.extractedFacts.policeStationAndDistrict || "কোতোয়ালি থানা, ঢাকা").split(",");
+    const policeStation = psAndDist[0]?.trim() || "কোতোয়ালি থানা";
+    const district = psAndDist[1]?.trim() || "ঢাকা";
+
     const initialTemplateData = {
       courtStation,
-      policeStation: analysis.extractedFacts.policeStationAndDistrict || "কোতোয়ালি",
-      district: "ঢাকা",
+      policeStation,
+      district,
       complainantName: analysis.extractedFacts.complainantName || "**[বাদীর নাম]**",
-      complainantDetails: analysis.extractedFacts.complainantDetails || "পিতা: **[পিতার নাম]**, সাং: **[ঠিকানা]**",
+      complainantDetails: analysis.extractedFacts.complainantDetails || `পিতা: **[পিতার নাম]**, সাং: **[ঠিকানা]**, থানা: ${policeStation}, জেলা: ${district}`,
       accusedList: analysis.extractedFacts.accusedList,
-      unknownAccusedCount: analysis.extractedFacts.unknownAccusedCount || "৪/৫",
-      incidentDate: analysis.extractedFacts.incidentDate || "গতকল্য রাত্রি আনুমানিক ১০:৩০ ঘটিকা",
-      incidentTime: analysis.extractedFacts.incidentTime || "রাত্রি ১০:৩০ ঘটিকা",
-      incidentPlace: analysis.extractedFacts.incidentPlace || "বাদীর নিজ বসতভিটায়",
+      unknownAccusedCount: analysis.extractedFacts.unknownAccusedCount || "",
+      incidentDate: analysis.extractedFacts.incidentDate || "ইং **[তারিখ]**",
+      incidentTime: analysis.extractedFacts.incidentTime || "",
+      incidentPlace: analysis.extractedFacts.incidentPlace || "**[ঘটনাস্থল]**",
       weaponsUsed: analysis.extractedFacts.weaponsUsed,
       injuriesAndMedical: analysis.extractedFacts.injuriesAndMedical || undefined,
       stolenOrDamagedItems: analysis.extractedFacts.stolenOrDamagedItems || undefined,
@@ -109,6 +134,7 @@ export async function POST(request: Request) {
     const newCase: CaseRecord = {
       id: newCaseId,
       userId: effectiveUserId,
+      chamberId: effectiveChamberId,
       title: title || analysis.caseTitleBn || "নতুন মামলা",
       category: effectiveCategory,
       priority: "NORMAL",
@@ -120,6 +146,16 @@ export async function POST(request: Request) {
       status: "INTERVIEWING",
       strategicAdvice: analysis.strategicAdviceForAdvocateBn,
       contradictionsDetected: analysis.contradictionsDetectedBn || [],
+      limitationCaseType: isHumanitarian
+        ? "HUMANITARIAN_EMERGENCY_RESCUE"
+        : isNuisance
+        ? "PUBLIC_NUISANCE_GD"
+        : effectiveCategory === "Civil"
+        ? "CIVIL_DECLARATION_TITLE"
+        : analysis.caseTitleBn.includes("চেক")
+        ? "NI_ACT_138_NOTICE"
+        : "CRIMINAL_FIR",
+      limitationTriggerDate: new Date().toISOString(),
       questions: analysis.followUpQuestions.map((q, idx) => ({
         id: `q-${Date.now()}-${idx}`,
         fieldKey: q.fieldKey,

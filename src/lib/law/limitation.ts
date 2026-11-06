@@ -40,6 +40,22 @@ export const LIMITATION_RULES: Record<string, LimitationRule> = {
     triggerEventBn: "অপরাধ সংঘটনের তারিখ ও সময়",
     notesBn: "ফৌজদারি মামলায় কোনো নির্দিষ্ট তামাদি নেই; তবে অযথা বিলম্ব হলে এজাহারে যৌক্তিক কারণ দর্শাতে হবে।",
   },
+  HUMANITARIAN_EMERGENCY_RESCUE: {
+    caseType: "HUMANITARIAN_EMERGENCY_RESCUE",
+    lawBn: "পুলিশ আইন, ১৮৬১ ও সংবিধান",
+    sectionBn: "ধারা ৪৪ / অনুচ্ছেদ ৩২",
+    periodDays: 0,
+    triggerEventBn: "বিপন্ন ব্যক্তির সন্ধান বা উদ্ধারের প্রয়োজনীয়তা দেখা দেওয়ার সময়",
+    notesBn: "জরুরি মানবিক উদ্ধার ও চিকিৎসাসেবা নিশ্চিতকরণে তামাদির কোনো বাধা নেই; জীবনের সুরক্ষায় তাৎক্ষণিক পদক্ষেপ গ্রহণ আইনত আবশ্যক।",
+  },
+  PUBLIC_NUISANCE_GD: {
+    caseType: "PUBLIC_NUISANCE_GD",
+    lawBn: "ফৌজদারি কার্যবিধি ও ধূমপান আইন",
+    sectionBn: "ধারা ১৩৩ / ২৯০",
+    periodDays: 0,
+    triggerEventBn: "উপদ্রব বা শব্দদূষণের চলমান ঘটনা",
+    notesBn: "গণউপদ্রব একটি চলমান অপরাধ (Continuing Offence); ঘটনা ঘটার সাথে সাথে সাধারণ ডায়েরি ও নির্বাহী ম্যাজিস্ট্রেট বরাবরে প্রতিকার চাওয়া যায়।",
+  },
   NI_ACT_138_NOTICE: {
     caseType: "NI_ACT_138_NOTICE",
     lawBn: "এনআই অ্যাক্ট, ১৮৮১",
@@ -141,6 +157,13 @@ export function calculateDeadline(
   const now = nowInput || new Date();
 
   if (rule.periodDays === 0) {
+    const statusText =
+      rule.caseType === "HUMANITARIAN_EMERGENCY_RESCUE"
+        ? "জরুরি মানবিক পদক্ষেপ (কোনো তামাদি নেই - তাৎক্ষণিক উদ্ধার আবশ্যক)"
+        : rule.caseType === "PUBLIC_NUISANCE_GD"
+        ? "চলমান গণউপদ্রব (কোনো তামাদি নেই - তাৎক্ষণিক প্রতিকার আবশ্যক)"
+        : "কোনো নির্দিষ্ট তামাদি নেই (বিলম্বের কারণ দর্শাতে হবে)";
+
     return {
       caseType: rule.caseType,
       lawBn: rule.lawBn,
@@ -150,7 +173,7 @@ export function calculateDeadline(
       daysRemaining: null,
       isExpired: false,
       status: "NO_DEADLINE",
-      statusBn: "কোনো নির্দিষ্ট তামাদি নেই (বিলম্বের কারণ দর্শাতে হবে)",
+      statusBn: statusText,
       notesBn: rule.notesBn,
       NEEDS_LAWYER_REVIEW_FOR_HOLIDAY_EXTENSION: false,
     };

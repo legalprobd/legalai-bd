@@ -7,6 +7,13 @@ export async function POST(request: Request) {
     const authCheck = await requireAuth();
     if (!authCheck.ok) return authCheck.response!;
 
+    if (authCheck.role === "JUNIOR") {
+      return NextResponse.json(
+        { ok: false, error: { messageBn: "জুনিয়র অ্যাডভোকেটদের জন্য সাবস্ক্রিপশন ও বিলিং পরিবর্তন সীমাবদ্ধ।" } },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { plan, userId } = body;
 

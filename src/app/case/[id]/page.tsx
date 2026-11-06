@@ -38,8 +38,8 @@ function CaseWorkspaceInner() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // View mode: "studio" (all 3 side-by-side) or single step focus ("intake" | "interrogation" | "document")
-  const [viewMode, setViewMode] = useState<"studio" | "intake" | "interrogation" | "document">("studio");
+  // View mode: single step wizard focus ("intake" | "interrogation" | "document") or expert "studio"
+  const [viewMode, setViewMode] = useState<"studio" | "intake" | "interrogation" | "document">("intake");
 
   // Fetch initial case record
   const fetchCase = async () => {
@@ -49,6 +49,25 @@ function CaseWorkspaceInner() {
       const json = await res.json();
       if (json.ok) {
         setCaseRecord(json.data);
+        // Smart wizard step resolution
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          const stepParam = urlParams.get("step");
+          const modeParam = urlParams.get("mode");
+          if (modeParam === "studio") {
+            setViewMode("studio");
+          } else if (stepParam === "1") {
+            setViewMode("intake");
+          } else if (stepParam === "2") {
+            setViewMode("interrogation");
+          } else if (stepParam === "3") {
+            setViewMode("document");
+          } else if (json.data.documents && json.data.documents.length > 0) {
+            setViewMode("document");
+          } else {
+            setViewMode("intake");
+          }
+        }
       } else {
         setErrorMsg(json.error?.messageBn || "মামলা লোড ব্যর্থ হয়েছে।");
       }
@@ -151,10 +170,10 @@ function CaseWorkspaceInner() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 font-sans">
+      <div className="flex h-screen items-center justify-center bg-slate-50 font-sans">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <p className="text-xs font-semibold text-slate-700">
             মামলার ফাইল ও কোর্ট ড্রাফট লোড হচ্ছে...
           </p>
         </div>
@@ -164,13 +183,13 @@ function CaseWorkspaceInner() {
 
   if (errorMsg || !caseRecord) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 font-sans">
-        <div className="text-center space-y-4 max-w-md p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800">
+      <div className="flex h-screen items-center justify-center bg-slate-50 p-4 font-sans">
+        <div className="text-center space-y-4 max-w-md p-6 bg-white rounded-3xl shadow-lg border border-slate-200">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base font-bold text-slate-900">
             মামলা লোড করা যায়নি
           </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400">{errorMsg}</p>
+          <p className="text-xs text-slate-600">{errorMsg}</p>
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition"
@@ -184,33 +203,56 @@ function CaseWorkspaceInner() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-100 dark:bg-slate-950 font-sans antialiased">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50 font-sans antialiased">
       {/* Global Unified Navbar */}
       <AppNavbar />
 
       {/* Case Header & Sub-Bar */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 shrink-0 z-20 shadow-xs">
+      <header className="bg-white border-b border-slate-200 shrink-0 z-20 shadow-xs">
         <div className="h-14 px-4 sm:px-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/"
-              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
               title="ড্যাশবোর্ডে ফিরে যান"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
 
             <div className="flex items-center gap-2 truncate">
-              <h1 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate max-w-xs sm:max-w-md">
+              <h1 className="font-bold text-xs sm:text-sm text-slate-900 truncate max-w-xs sm:max-w-md">
                 {caseRecord.title}
               </h1>
               <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${
+                  caseRecord.category === "General"
+                    ? "bg-slate-100 text-slate-700 border-slate-300"
+                    : caseRecord.category === "Civil"
+                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                    : caseRecord.category === "Criminal"
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : caseRecord.category === "Public Interest & Human Rights" || caseRecord.category?.includes("Public Interest")
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-purple-50 text-purple-700 border-purple-200"
+                }`}
+              >
+                {caseRecord.category === "General"
+                  ? "সাধারণ তথ্যানুসন্ধান"
+                  : caseRecord.category === "Criminal"
+                  ? "ফৌজদারি"
+                  : caseRecord.category === "Civil"
+                  ? "দেওয়ানি"
+                  : caseRecord.category === "Public Interest & Human Rights" || caseRecord.category?.includes("Public Interest")
+                  ? "জনস্বার্থ"
+                  : "বিশেষ ট্রাইব্যুনাল"}
+              </span>
+              <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                   caseRecord.priority === "URGENT"
-                    ? "bg-red-100 text-red-700 border border-red-300 dark:bg-red-950/60 dark:text-red-400 dark:border-red-800"
+                    ? "bg-red-100 text-red-700 border border-red-300"
                     : caseRecord.priority === "HIGH"
-                    ? "bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
-                    : "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
+                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
                 }`}
               >
                 {caseRecord.priority === "URGENT"
@@ -225,13 +267,13 @@ function CaseWorkspaceInner() {
           {/* Right Meta & Studio View Controls */}
           <div className="flex items-center gap-3 text-xs">
             {caseRecord.courtName && (
-              <div className="hidden lg:flex items-center gap-1 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="hidden lg:flex items-center gap-1 text-slate-600 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
                 <span className="text-slate-400">আদালত:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{caseRecord.courtName}</span>
+                <span className="font-semibold text-slate-800">{caseRecord.courtName}</span>
               </div>
             )}
 
-            <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800 font-bold">
+            <div className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 font-bold">
               <span>সম্পূর্ণতা:</span>
               <strong>{caseRecord.completenessScore}%</strong>
             </div>
@@ -239,7 +281,7 @@ function CaseWorkspaceInner() {
         </div>
 
         {/* Step-by-Step Navigation Bar (ধাপ ১ ➔ ধাপ ২ ➔ ধাপ ৩) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-1.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-1.5 border-t border-slate-100 bg-slate-50/60 gap-2">
           {/* 3 Clear Action Steps */}
           <div className="flex items-center gap-1 overflow-x-auto">
             <button
@@ -248,14 +290,14 @@ function CaseWorkspaceInner() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "intake"
                   ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                  : "text-slate-600 hover:bg-slate-200"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">১</span>
               <span>মক্কেলের ঘটনা (Intake)</span>
             </button>
 
-            <span className="text-slate-300 dark:text-slate-700 font-bold">→</span>
+            <span className="text-slate-300 font-bold">→</span>
 
             <button
               type="button"
@@ -263,14 +305,14 @@ function CaseWorkspaceInner() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "interrogation"
                   ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                  : "text-slate-600 hover:bg-slate-200"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">২</span>
               <span>আইনি অনুসন্ধান ও জেরা (Questions)</span>
             </button>
 
-            <span className="text-slate-300 dark:text-slate-700 font-bold">→</span>
+            <span className="text-slate-300 font-bold">→</span>
 
             <button
               type="button"
@@ -278,14 +320,14 @@ function CaseWorkspaceInner() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "document"
                   ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                  : "text-slate-600 hover:bg-slate-200"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">৩</span>
               <span>আদালতের আরজি ও প্রিন্ট (Draft)</span>
             </button>
 
-            <span className="text-slate-300 dark:text-slate-700 mx-1">|</span>
+            <span className="text-slate-300 mx-1">|</span>
 
             <button
               type="button"
@@ -293,7 +335,7 @@ function CaseWorkspaceInner() {
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                 viewMode === "studio"
                   ? "bg-slate-800 text-white font-bold"
-                  : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                  : "text-slate-500 hover:bg-slate-200"
               }`}
               title="এক নজরে ৩টি প্যানেলই একসাথে দেখুন"
             >
@@ -306,14 +348,14 @@ function CaseWorkspaceInner() {
           <div className="flex items-center gap-3 text-xs font-medium">
             <Link
               href={`/case/${caseId}/hearings`}
-              className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1"
+              className="text-slate-500 hover:text-indigo-600 flex items-center gap-1"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>কোর্ট ডায়েরি ({caseRecord.hearings?.length || 0})</span>
             </Link>
             <Link
               href={`/case/${caseId}/evidence`}
-              className="text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1"
+              className="text-slate-500 hover:text-indigo-600 flex items-center gap-1"
             >
               <FileBox className="w-3.5 h-3.5" />
               <span>প্রমাণপত্র ভল্ট ({caseRecord.evidenceFiles?.length || 0})</span>
@@ -322,9 +364,9 @@ function CaseWorkspaceInner() {
         </div>
       </header>
 
-      {/* 3-Panel Core Advocate Workspace Layout */}
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
-        {/* Left Column: Client Statement & Facts */}
+      {/* 3-Step Wizard & Advocate Workspace Layout */}
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden bg-slate-100">
+        {/* Step 1: Client Statement & Facts Intake */}
         <section
           className={`h-full overflow-hidden ${
             viewMode === "document" || viewMode === "interrogation"
@@ -334,15 +376,18 @@ function CaseWorkspaceInner() {
               : "md:col-span-3 lg:col-span-3"
           }`}
         >
-          <StatementInputPanel
-            key={`stmt-${caseRecord.id}`}
-            caseRecord={caseRecord}
-            onUpdateStatement={handleUpdateStatement}
-            isAnalyzing={isAnalyzing}
-          />
+          <div className={viewMode === "intake" ? "max-w-4xl mx-auto h-full p-2 sm:p-4" : "h-full"}>
+            <StatementInputPanel
+              key={`stmt-${caseRecord.id}`}
+              caseRecord={caseRecord}
+              onUpdateStatement={handleUpdateStatement}
+              isAnalyzing={isAnalyzing}
+              onNextStep={() => setViewMode("interrogation")}
+            />
+          </div>
         </section>
 
-        {/* Center Column: Legal Interrogation & Applicable Laws */}
+        {/* Step 2: Legal Interrogation & Applicable Laws */}
         <section
           className={`h-full overflow-hidden ${
             viewMode === "document" || viewMode === "intake"
@@ -352,15 +397,19 @@ function CaseWorkspaceInner() {
               : "md:col-span-4 lg:col-span-4"
           }`}
         >
-          <InterrogationPanel
-            key={`inter-${caseRecord.id}`}
-            caseRecord={caseRecord}
-            onSubmitAnswers={handleSubmitAnswers}
-            isSubmitting={isSubmitting}
-          />
+          <div className={viewMode === "interrogation" ? "max-w-4xl mx-auto h-full p-2 sm:p-4" : "h-full"}>
+            <InterrogationPanel
+              key={`inter-${caseRecord.id}`}
+              caseRecord={caseRecord}
+              onSubmitAnswers={handleSubmitAnswers}
+              isSubmitting={isSubmitting}
+              onPrevStep={() => setViewMode("intake")}
+              onNextStep={() => setViewMode("document")}
+            />
+          </div>
         </section>
 
-        {/* Right Column: Court Document Canvas */}
+        {/* Step 3: Court Document Canvas */}
         <section
           className={`h-full overflow-hidden ${
             viewMode === "intake" || viewMode === "interrogation"
@@ -370,12 +419,15 @@ function CaseWorkspaceInner() {
               : "md:col-span-5 lg:col-span-5"
           }`}
         >
-          <DocumentEditorPanel
-            key={`doc-${caseRecord.id}`}
-            caseRecord={caseRecord}
-            onGenerateDocument={handleGenerateDocument}
-            isGenerating={isGenerating}
-          />
+          <div className={viewMode === "document" ? "max-w-5xl mx-auto h-full p-2 sm:p-4" : "h-full"}>
+            <DocumentEditorPanel
+              key={`doc-${caseRecord.id}`}
+              caseRecord={caseRecord}
+              onGenerateDocument={handleGenerateDocument}
+              isGenerating={isGenerating}
+              onPrevStep={() => setViewMode("interrogation")}
+            />
+          </div>
         </section>
       </main>
     </div>
@@ -386,7 +438,7 @@ export default function CaseWorkspacePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 font-sans">
+        <div className="flex h-screen items-center justify-center bg-slate-50 font-sans">
           <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
       }

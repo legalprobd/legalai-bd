@@ -9,23 +9,33 @@ import OpenAI from "openai";
 /**
  * Returns the active AI provider based on environment variables.
  */
-export function getActiveAIProvider(): "gemini" | "openai" | "mock" {
+export function getActiveAIProvider(): "deepseek" | "gemini" | "openai" | "mock" {
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
+  if (deepseekKey && deepseekKey.trim().length > 5) return "deepseek";
   if (geminiKey && geminiKey.trim().length > 5) return "gemini";
   if (openaiKey && openaiKey.trim().length > 5) return "openai";
   return "mock";
 }
 
+function normalizeAnalysisResponse(res: CaseAnalysisResponse): CaseAnalysisResponse {
+  if ((!res.applicableLaws || res.applicableLaws.length === 0) && (res.completenessScore ?? 0) < 20) {
+    res.caseCategory = "General";
+  }
+  return res;
+}
+
 /**
- * Analyzes client statement and follow-up Q&A using RAG + LLM (Gemini 1.5 Pro / GPT-4o)
+ * Analyzes client statement and follow-up Q&A using RAG + LLM (DeepSeek / Gemini / GPT-4o)
  * with deterministic offline fallback.
  */
 export async function analyzeCaseStatement(
   statement: string,
   answeredQuestions: Record<string, string> = {}
 ): Promise<CaseAnalysisResponse> {
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
@@ -39,28 +49,62 @@ ${INTERVIEWER_SYSTEM_PROMPT}
 ${ragResult.formattedContext}
 `;
 
-  // 1. Try Gemini (gemini-2.0-flash / gemini-1.5-flash / gemini-1.5-pro) if configured
+  // 1. Try DeepSeek (deepseek-chat) if configured
+  if (deepseekKey && deepseekKey.trim().length > 5) {
+    try {
+      const openai = new OpenAI({
+        apiKey: deepseekKey,
+        baseURL: "https://api.deepseek.com",
+      });
+      const completion = await openai.chat.completions.create({
+        model: "deepseek-chat",
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        messages: [
+          { role: "system", content: enrichedInterviewerPrompt },
+          {
+            role: "user",
+            content: `ঘটনার বিবরণ: "${statement}"\n\nAnswers: ${JSON.stringify(answeredQuestions)}\n\nReturn strict JSON matching CaseAnalysisResponseSchema.`,
+          },
+        ],
+      });
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        const parsed = JSON.parse(content);
+        const validated = CaseAnalysisResponseSchema.safeParse(parsed);
+        if (validated.success) {
+          return normalizeAnalysisResponse(validated.data);
+        }
+      }
+    } catch (err) {
+      console.warn("DeepSeek API call failed, trying next provider:", err);
+    }
+  }
+
+  // 2. Try Gemini (gemini-3-flash-preview / gemini-3.1-flash-lite-preview / gemini-pro-latest) if configured
   if (geminiKey && geminiKey.trim().length > 5) {
+    const envModel = process.env.GEMINI_MODEL;
     const modelsToTry = [
-      "gemini-2.0-flash",
-      "gemini-1.5-flash-latest",
-      "gemini-1.5-pro-latest",
-      "gemini-1.5-flash",
-      "gemini-1.5-pro",
-    ];
+      envModel,
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite-preview",
+      "gemini-flash-lite-latest",
+      "gemini-flash-latest",
+      "gemini-pro-latest",
+    ].filter(Boolean) as string[];
     for (const modelName of modelsToTry) {
       try {
         const genAI = new GoogleGenerativeAI(geminiKey);
         const model = genAI.getGenerativeModel({
           model: modelName,
+          systemInstruction: enrichedInterviewerPrompt,
           generationConfig: {
             responseMimeType: "application/json",
+            temperature: 0.1,
           },
         });
 
         const prompt = `
-${enrichedInterviewerPrompt}
-
 USER RAW STATEMENT:
 "${statement}"
 
@@ -70,11 +114,19 @@ ${JSON.stringify(answeredQuestions, null, 2)}
 Return a strict JSON matching CaseAnalysisResponseSchema:
 {
   "caseTitleBn": "string",
-  "caseCategory": "Criminal" | "Civil" | "Family" | "Special_Tribunal",
+  "caseCategory": "Constitutional & Writ" | "Civil" | "Criminal" | "Family & Guardianship" | "Labour & Employment" | "Public Interest & Human Rights" | "Miscellaneous / Protective Relief" | "General",
   "completenessScore": number (0-100),
   "extractedFacts": { ... },
-  "applicableLaws": [ ... ],
-  "followUpQuestions": [ ... ],
+  "applicableLaws": [
+    {
+      "actNameBn": "আইনের নাম (বাংলায়)",
+      "section": "ধারা / অনুচ্ছেদ",
+      "titleBn": "উক্ত ধারার সুনির্দিষ্ট বিষয়বস্তু বা শিরোনাম"
+    }
+  ],
+  "followUpQuestions": [
+    { "questionBn": "পরবর্তী করণীয় বা তথ্য উদঘাটনের জন্য সুনির্দিষ্ট প্রশ্ন?" }
+  ],
   "strategicAdviceForAdvocateBn": [ ... ],
   "contradictionsDetectedBn": [ ... ]
 }
@@ -84,7 +136,7 @@ Return a strict JSON matching CaseAnalysisResponseSchema:
         const parsed = JSON.parse(responseText);
         const validated = CaseAnalysisResponseSchema.safeParse(parsed);
         if (validated.success) {
-          return validated.data;
+          return normalizeAnalysisResponse(validated.data);
         }
       } catch (err) {
         console.warn(`Gemini API call (${modelName}) failed, trying fallback:`, err);
@@ -99,11 +151,12 @@ Return a strict JSON matching CaseAnalysisResponseSchema:
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         response_format: { type: "json_object" },
+        temperature: 0.1,
         messages: [
           { role: "system", content: enrichedInterviewerPrompt },
           {
             role: "user",
-            content: `Statement: "${statement}"\n\nAnswers: ${JSON.stringify(answeredQuestions)}`,
+            content: `ঘটনার বিবরণ: "${statement}"\n\nAnswers: ${JSON.stringify(answeredQuestions)}`,
           },
         ],
       });
@@ -112,7 +165,7 @@ Return a strict JSON matching CaseAnalysisResponseSchema:
         const parsed = JSON.parse(content);
         const validated = CaseAnalysisResponseSchema.safeParse(parsed);
         if (validated.success) {
-          return validated.data;
+          return normalizeAnalysisResponse(validated.data);
         }
       }
     } catch (err) {
@@ -121,7 +174,7 @@ Return a strict JSON matching CaseAnalysisResponseSchema:
   }
 
   // 3. Deterministic Mock Engine fallback
-  return generateMockCaseAnalysis(statement, answeredQuestions);
+  return normalizeAnalysisResponse(generateMockCaseAnalysis(statement, answeredQuestions));
 }
 
 /**
@@ -134,6 +187,7 @@ export async function generateLegalDraftWithLLM(
   rawStatement: string,
   templateData: Record<string, any>
 ): Promise<{ titleBn: string; contentHtml: string }> {
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
@@ -147,12 +201,50 @@ ${DRAFTER_SYSTEM_PROMPT}
 ${ragResult.formattedContext}
 `;
 
+  // Try DeepSeek if available
+  if (deepseekKey && deepseekKey.trim().length > 5) {
+    try {
+      const openai = new OpenAI({
+        apiKey: deepseekKey,
+        baseURL: "https://api.deepseek.com",
+      });
+      const completion = await openai.chat.completions.create({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: enrichedDrafterPrompt },
+          {
+            role: "user",
+            content: `Draft Document: ${docType}\nCase: ${caseTitle}\nFacts:\n${JSON.stringify(templateData, null, 2)}\n\nOutput clean, print-ready HTML inside <div class="legal-doc"> with formal Bangladeshi court layout.`,
+          },
+        ],
+      });
+      const html = completion.choices[0]?.message?.content?.trim();
+      if (html && (html.includes("<div") || html.includes("<p>"))) {
+        return {
+          titleBn: `${docType} খসড়া`,
+          contentHtml: html,
+        };
+      }
+    } catch (err) {
+      console.warn("DeepSeek drafting failed, trying next provider:", err);
+    }
+  }
+
   // Try Gemini if available
   if (geminiKey && geminiKey.trim().length > 5) {
-    try {
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-      const prompt = `
+    const envModel = process.env.GEMINI_MODEL;
+    const modelsToTry = [
+      envModel,
+      "gemini-3-flash-preview",
+      "gemini-3.1-flash-lite-preview",
+      "gemini-flash-lite-latest",
+    ].filter(Boolean) as string[];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const prompt = `
 ${enrichedDrafterPrompt}
 
 DOCUMENT TYPE TO DRAFT: ${docType}
@@ -162,16 +254,17 @@ ${JSON.stringify(templateData, null, 2)}
 
 Output clean, print-ready HTML inside <div class="legal-doc"> with formal Bangladeshi court layout.
 `;
-      const result = await model.generateContent(prompt);
-      const html = result.response.text().trim();
-      if (html.includes("<div") || html.includes("<p>")) {
-        return {
-          titleBn: `${docType} খসড়া`,
-          contentHtml: html,
-        };
+        const result = await model.generateContent(prompt);
+        const html = result.response.text().trim();
+        if (html.includes("<div") || html.includes("<p>")) {
+          return {
+            titleBn: `${docType} খসড়া`,
+            contentHtml: html,
+          };
+        }
+      } catch (err) {
+        console.warn(`Gemini drafting (${modelName}) failed, trying fallback:`, err);
       }
-    } catch (err) {
-      console.warn("Gemini drafting failed, using template engine:", err);
     }
   }
 

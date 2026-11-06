@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { CommandPalette } from "@/components/common/CommandPalette";
 import { Footer } from "@/components/common/Footer";
+import { LegalCopilotWidget } from "@/components/common/LegalCopilotWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,20 +74,13 @@ export default function RootLayout({
   return (
     <html
       lang="bn"
-      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex-1 flex flex-col">{children}</div>
-          <Footer />
-          <CommandPalette />
-        </ThemeProvider>
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-800">
+        <div className="flex-1 flex flex-col">{children}</div>
+        <Footer />
+        <CommandPalette />
+        <LegalCopilotWidget />
       </body>
     </html>
   );

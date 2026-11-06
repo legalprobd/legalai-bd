@@ -3,16 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { useTheme } from "next-themes";
 import {
   Search,
   LayoutDashboard,
   PlusCircle,
   Settings,
   Shield,
+  ShieldAlert,
+  Building2,
   CreditCard,
-  Sun,
-  Moon,
   FolderOpen,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ export function CommandPalette() {
   const [search, setSearch] = useState("");
   const [cases, setCases] = useState<CaseItem[]>([]);
   const router = useRouter();
-  const { setTheme, resolvedTheme } = useTheme();
 
   // Listen for Ctrl+K or Cmd+K
   useEffect(() => {
@@ -85,27 +83,27 @@ export function CommandPalette() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+        className="w-full max-w-xl bg-white  rounded-xl shadow-2xl border border-slate-200  overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <Command label="Global Command Menu" className="w-full">
-          <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center px-4 border-b border-slate-200 ">
             <Search className="w-5 h-5 text-slate-400 mr-2" />
             <Command.Input
               data-testid="command-palette-input"
               value={search}
               onValueChange={setSearch}
               placeholder="মেনু খুঁজুন বা মামলা অনুসন্ধান করুন... (Ctrl+K)"
-              className="w-full py-4 text-base bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+              className="w-full py-4 text-base bg-transparent text-slate-900  placeholder-slate-400 focus:outline-none"
               autoFocus
             />
-            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs text-slate-400 bg-slate-100 dark:bg-slate-800 rounded border border-slate-300 dark:border-slate-700">
+            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs text-slate-400 bg-slate-100  rounded border border-slate-300 ">
               ESC
             </kbd>
           </div>
 
           <Command.List className="max-h-80 overflow-y-auto p-2 space-y-1">
-            <Command.Empty className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            <Command.Empty className="py-6 text-center text-sm text-slate-500 ">
               কোনো ফলাফল পাওয়া যায়নি।
             </Command.Empty>
 
@@ -117,9 +115,9 @@ export function CommandPalette() {
                 data-testid="cmd-dashboard"
                 value="ড্যাশবোর্ড Dashboard"
                 onSelect={() => runCommand(() => router.push("/dashboard"))}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
               >
-                <LayoutDashboard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <LayoutDashboard className="w-4 h-4 text-emerald-600 " />
                 <span>ড্যাশবোর্ড (Dashboard)</span>
               </Command.Item>
 
@@ -127,9 +125,9 @@ export function CommandPalette() {
                 data-testid="cmd-intake"
                 value="নতুন মামলা তৈরি New Case Intake"
                 onSelect={() => runCommand(() => router.push("/intake"))}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
               >
-                <PlusCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <PlusCircle className="w-4 h-4 text-blue-600 " />
                 <span>নতুন মামলা তৈরি (New Case Intake)</span>
               </Command.Item>
 
@@ -137,9 +135,9 @@ export function CommandPalette() {
                 data-testid="cmd-settings"
                 value="প্রোফাইল ও চেম্বার সেটিংস Settings"
                 onSelect={() => runCommand(() => router.push("/settings"))}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
               >
-                <Settings className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <Settings className="w-4 h-4 text-slate-600 " />
                 <span>প্রোফাইল ও চেম্বার সেটিংস (Settings)</span>
               </Command.Item>
 
@@ -147,9 +145,9 @@ export function CommandPalette() {
                 data-testid="cmd-admin"
                 value="অ্যাডমিন প্যানেল Admin Panel"
                 onSelect={() => runCommand(() => router.push("/admin"))}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
               >
-                <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <Shield className="w-4 h-4 text-amber-600 " />
                 <span>অ্যাডমিন প্যানেল (Admin Panel)</span>
               </Command.Item>
 
@@ -157,38 +155,76 @@ export function CommandPalette() {
                 data-testid="cmd-billing"
                 value="বিলিং ও সাবস্ক্রিপশন Billing"
                 onSelect={() => runCommand(() => router.push("/billing"))}
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
               >
-                <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <CreditCard className="w-4 h-4 text-purple-600 " />
                 <span>বিলিং ও সাবস্ক্রিপশন (Billing)</span>
               </Command.Item>
             </Command.Group>
 
             <Command.Group
-              heading="থিম নিয়ন্ত্রণ"
+              heading="আইনি এআই টুলস"
               className="text-xs font-semibold text-slate-400 px-2 py-1 uppercase tracking-wider mt-2"
             >
               <Command.Item
-                data-testid="cmd-theme-toggle"
-                value="থিম পরিবর্তন Theme Dark Light"
-                onSelect={() =>
-                  runCommand(() =>
-                    setTheme(resolvedTheme === "dark" ? "light" : "dark")
-                  )
-                }
-                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                data-testid="cmd-khatian-audit"
+                value="দলিল ও খতিয়ান চেইন অডিট Khatian Deed Chain"
+                onSelect={() => runCommand(() => router.push("/khatian-audit"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition"
               >
-                {resolvedTheme === "dark" ? (
-                  <>
-                    <Sun className="w-4 h-4 text-amber-400" />
-                    <span>লাইট মোড চালু করুন (Switch to Light Mode)</span>
-                  </>
-                ) : (
-                  <>
-                    <Moon className="w-4 h-4 text-slate-600" />
-                    <span>ডার্ক মোড চালু করুন (Switch to Dark Mode)</span>
-                  </>
-                )}
+                <FolderOpen className="w-4 h-4 text-amber-600" />
+                <span>দলিল ও খতিয়ান চেইন অডিট (CS, SA, RS, BS)</span>
+              </Command.Item>
+              <Command.Item
+                data-testid="cmd-cross-exam"
+                value="এআই জেরা ও ট্রায়াল ড্রিল Cross Examination"
+                onSelect={() => runCommand(() => router.push("/cross-exam"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition"
+              >
+                <FolderOpen className="w-4 h-4 text-indigo-600" />
+                <span>এআই জেরা ও ট্রায়াল সিমুলেটর (Evidence Act 1872)</span>
+              </Command.Item>
+              <Command.Item
+                data-testid="cmd-client-notify"
+                value="মক্কেল অটোমেটেড নোটিফিকেশন Client WhatsApp Hub"
+                onSelect={() => runCommand(() => router.push("/client-notify"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition"
+              >
+                <FolderOpen className="w-4 h-4 text-emerald-600" />
+                <span>মক্কেল অটোমেটেড নোটিফিকেশন ও হোয়াটসঅ্যাপ হাব</span>
+              </Command.Item>
+              <Command.Item
+                data-testid="cmd-cause-list-tracker"
+                value="লাইভ কজলিস্ট ট্র্যাকার Live Cause List Tracker"
+                onSelect={() => runCommand(() => router.push("/cause-list-tracker"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition"
+              >
+                <FolderOpen className="w-4 h-4 text-indigo-600" />
+                <span>বাংলাদেশ আদালত কজলিস্ট লাইভ ট্র্যাকার (Cause List Tracker)</span>
+              </Command.Item>
+            </Command.Group>
+
+            <Command.Group
+              heading="চেম্বার ও অ্যাডমিন"
+              className="text-xs font-semibold text-slate-400 px-2 py-1 uppercase tracking-wider mt-2"
+            >
+              <Command.Item
+                data-testid="cmd-chamber-settings"
+                value="চেম্বার সেটিংস Chamber Team"
+                onSelect={() => runCommand(() => router.push("/chamber/settings"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer transition"
+              >
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                <span>চেম্বার সেটিংস ও অ্যাসোসিয়েটস টিম</span>
+              </Command.Item>
+              <Command.Item
+                data-testid="cmd-super-admin"
+                value="সুপার অ্যাডমিন Super Admin Console"
+                onSelect={() => runCommand(() => router.push("/super-admin"))}
+                className="flex items-center gap-3 px-3 py-2 text-sm text-purple-700 font-bold rounded-lg hover:bg-purple-50 cursor-pointer transition"
+              >
+                <ShieldAlert className="w-4 h-4 text-purple-600" />
+                <span>সুপার প্ল্যাটফর্ম অ্যাডমিন কনসোল</span>
               </Command.Item>
             </Command.Group>
 
@@ -205,7 +241,7 @@ export function CommandPalette() {
                     onSelect={() =>
                       runCommand(() => router.push(`/case/${c.id}`))
                     }
-                    className="flex items-center justify-between px-3 py-2 text-sm text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition"
+                    className="flex items-center justify-between px-3 py-2 text-sm text-slate-700  rounded-lg hover:bg-slate-100  cursor-pointer transition"
                   >
                     <div className="flex items-center gap-3 truncate">
                       <FolderOpen className="w-4 h-4 text-emerald-500 shrink-0" />

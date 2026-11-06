@@ -97,6 +97,19 @@ export async function DELETE(
     const authCheck = await requireAuth();
     if (!authCheck.ok) return authCheck.response!;
 
+    if (authCheck.role === "JUNIOR") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "FORBIDDEN",
+            messageBn: "জুনিয়র অ্যাডভোকেটদের মামলা মুছে ফেলার অনুমতি নেই। চেম্বার প্রধানের অনুমতি প্রয়োজন।",
+          },
+        },
+        { status: 403 }
+      );
+    }
+
     const { id } = await params;
     const success = await db.deleteCase(id);
     return NextResponse.json({

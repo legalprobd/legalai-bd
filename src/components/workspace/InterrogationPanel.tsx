@@ -22,12 +22,16 @@ interface InterrogationPanelProps {
   caseRecord: CaseRecord;
   onSubmitAnswers: (answers: Record<string, string>) => Promise<void>;
   isSubmitting: boolean;
+  onPrevStep?: () => void;
+  onNextStep?: () => void;
 }
 
 export function InterrogationPanel({
   caseRecord,
   onSubmitAnswers,
   isSubmitting,
+  onPrevStep,
+  onNextStep,
 }: InterrogationPanelProps) {
   // Local state for pending answers
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -86,14 +90,151 @@ export function InterrogationPanel({
   const laws = caseRecord.applicableLaws || [];
   const score = caseRecord.completenessScore || 0;
 
-  // Evidence Checklist Items based on laws
-  const evidenceChecklist = [
-    { id: "ev-0", label: "সরকারি হাসপাতালের জখমি সনদ (Medical Injury Certificate)" },
-    { id: "ev-1", label: "ভাঙচুরকৃত আসবাবপত্র ও আঘাতের স্পষ্ট ছবি/ভিডিও" },
-    { id: "ev-2", label: "বাদী ও সাক্ষীদের জাতীয় পরিচয়পত্রের (NID) কপি" },
-    { id: "ev-3", label: "লুণ্ঠিত স্বর্ণালংকার ক্রয়ের ভাউচার/মেমো (যদি থাকে)" },
-    { id: "ev-4", label: "ঘটনাস্থলের ৩ জন চাক্ষুষ প্রত্যক্ষদর্শীর পূর্ণাঙ্গ নাম-ঠিকানা" },
-  ];
+  const isSmokingNuisance =
+    (caseRecord.title && (caseRecord.title.includes("ধূমপান") || caseRecord.title.includes("ধুমপান") || caseRecord.title.includes("সিগারেট") || caseRecord.title.includes("উপদ্রব"))) ||
+    (caseRecord.rawStatement && (caseRecord.rawStatement.includes("ধূমপান") || caseRecord.rawStatement.includes("ধুমপান") || caseRecord.rawStatement.includes("সিগারেট") || caseRecord.rawStatement.includes("তামাক"))) ||
+    laws.some(l => l.section.includes("tobacco") || l.section.includes("২৯০") || l.section.includes("290"));
+
+  const isHumanitarianRescue =
+    (caseRecord.title && (caseRecord.title.includes("উদ্ধার") || caseRecord.title.includes("অজ্ঞান") || caseRecord.title.includes("বৃদ্ধ") || caseRecord.title.includes("মানবিক") || caseRecord.title.includes("মুমূর্ষু"))) ||
+    (caseRecord.rawStatement && (caseRecord.rawStatement.includes("অজ্ঞান") || caseRecord.rawStatement.includes("বৃদ্ধ") || caseRecord.rawStatement.includes("পড়ে আছে") || caseRecord.rawStatement.includes("উদ্ধার"))) ||
+    laws.some(l => l.section?.includes("৪৪") || l.section?.includes("police") || l.section?.includes("destitute"));
+
+  const isChequeCase =
+    laws.some(l => l.section.includes("138") || l.titleBn?.includes("চেক"));
+
+  const isCivilLand =
+    !isSmokingNuisance &&
+    !isHumanitarianRescue &&
+    (caseRecord.category === "Civil" ||
+    laws.some(l => l.section.includes("৪২") || l.section.includes("৫৪") || l.section.includes("cpc")));
+
+  // Dynamic Evidence Checklist Items
+  const evidenceChecklist = isHumanitarianRescue
+    ? [
+        { id: "ev-0", label: "বিপন্ন ব্যক্তির বর্তমান অবস্থানের স্পষ্ট ছবি ও ভিডিও ফুটেজ" },
+        { id: "ev-1", label: "স্থানীয় পথচারী বা প্রত্যক্ষদর্শী সাক্ষীদের নাম ও মোবাইল নম্বর" },
+        { id: "ev-2", label: "জাতীয় জরুরি সেবা ৯৯৯ বা নিকটস্থ থানায় অবহিতকরণের কল রেকর্ড/মেসেজ" },
+        { id: "ev-3", label: "সরকারি হাসপাতালে প্রাথমিক ভর্তির টিকিট বা ছাড়পত্র (যদি থাকে)" },
+      ]
+    : isSmokingNuisance
+    ? [
+        { id: "ev-0", label: "প্রকাশ্যে ধূমপান ও উপদ্রবের স্পষ্ট ছবি বা ভিডিও ফুটেজ (যদি থাকে)" },
+        { id: "ev-1", label: "বাদী ও ভুক্তভোগী পরিবারের জাতীয় পরিচয়পত্রের (NID) কপি" },
+        { id: "ev-2", label: "প্রত্যক্ষদর্শী প্রতিবেশী সাক্ষীদের নাম ও মোবাইল নম্বর তালিকা" },
+        { id: "ev-3", label: "বাড়িওয়ালা বা ভবন পরিচালনা কমিটির নিকট ইতিপূর্বে প্রদত্ত অভিযোগের প্রমাণ" },
+      ]
+    : isChequeCase
+    ? [
+        { id: "ev-0", label: "মূল ব্যাংক চেক ও চেকের উভয় পিঠের স্পষ্ট রঙিন কপি" },
+        { id: "ev-1", label: "ব্যাংক কর্তৃক প্রদত্ত সিল ও তারিখযুক্ত চেক ডিজঅনার মেমো স্লিপ" },
+        { id: "ev-2", label: "ডাকযোগে প্রেরিত লিগ্যাল নোটিশের কপি ও রেজিস্ট্রি রসিদ (A/D Card)" },
+        { id: "ev-3", label: "লেনদেন বা দেনা-পাওনা সংক্রান্ত চুক্তিপত্র বা ইনভয়েস" },
+      ]
+    : isCivilLand
+    ? [
+        { id: "ev-0", label: "মূল রেজিস্ট্রি কবলা দলিল ও বায়া দলিলসমূহ" },
+        { id: "ev-1", label: "সিএস, এসএ, আরএস/বিএস খতিয়ান ও নামজারি পরচা (DCR)" },
+        { id: "ev-2", label: "হাল সনের ভূমি উন্নয়ন কর (খাজনা) পরিশোধের দাখিলা" },
+        { id: "ev-3", label: "নালিশি সম্পত্তির চৌহদ্দি ও সীমানা পরিমাপের স্কেচ ম্যাপ" },
+      ]
+    : [
+        { id: "ev-0", label: "সরকারি হাসপাতালের জখমি সনদ (Medical Injury Certificate - যদি থাকে)" },
+        { id: "ev-1", label: "ঘটনাস্থল ও শারীরিক আঘাতের স্পষ্ট ছবি/ভিডিও" },
+        { id: "ev-2", label: "বাদী ও সাক্ষীদের জাতীয় পরিচয়পত্রের (NID) কপি" },
+        { id: "ev-3", label: "ঘটনাস্থলের চাক্ষুষ প্রত্যক্ষদর্শীদের পূর্ণাঙ্গ নাম-ঠিকানা" },
+      ];
+
+  // Adaptive 3-Tier Missing Facts Checklist
+  const tierConfig = isHumanitarianRescue
+    ? {
+        tier1: {
+          title: "টায়ার ১: বিপন্ন ব্যক্তির অবস্থান ও এখতিয়ার",
+          item1: { label: "সুনির্দিষ্ট অবস্থান ও সংশ্লিষ্ট থানা এখতিয়ার", done: !!caseRecord.extractedFacts?.incidentPlace },
+          item2: { label: "উদ্ধারহীন থাকার স্থায়িত্ব ও সময়কাল", done: !!caseRecord.extractedFacts?.incidentDate },
+        },
+        tier2: {
+          title: "টায়ার ২: শারীরিক অবস্থা ও তাৎক্ষণিক পদক্ষেপ",
+          item1: { label: "ব্যক্তির চেতনা ও শারীরিক বিপন্নতার ধরন", done: !!answers["victim_condition"] || !!caseRecord.extractedFacts?.injuriesAndMedical },
+          item2: { label: "জরুরি সেবা (৯৯৯ / পুলিশ) অবহিতকরণের রেকর্ড", done: !!answers["emergency_notified"] },
+        },
+        tier3: {
+          title: "টায়ার ৩: প্রশাসনিক ও আইনি বাধ্যবাধকতা",
+          item1: { label: "পুলিশ আইন ৪৪ ধারা (উদ্ধারের আইনি দায়িত্ব)", done: true },
+          item2: { label: "সংবিধানের ৩২ অনুচ্ছেদ (জীবন রক্ষার অধিকার)", done: true },
+        },
+      }
+    : isSmokingNuisance
+    ? {
+        tier1: {
+          title: "টায়ার ১: উপদ্রবের স্থান ও সময়কাল",
+          item1: { label: "ধূমপান বা উপদ্রবের সুনির্দিষ্ট অবস্থান", done: !!caseRecord.extractedFacts?.incidentPlace },
+          item2: { label: "উপদ্রব সংঘটনের নিয়মিত সময়কাল", done: !!caseRecord.extractedFacts?.incidentDate },
+        },
+        tier2: {
+          title: "টায়ার ২: প্রত্যক্ষদর্শী ও স্বাস্থ্যগত প্রভাব",
+          item1: { label: "শিশু/রোগীর স্বাস্থ্যঝুঁকি ও উপদ্রবের ছবি/ভিডিও", done: !!answers["evidence_recorded"] || score >= 50 },
+          item2: { label: "প্রত্যক্ষদর্শী প্রতিবেশী ও পরিবারের সাক্ষ্য", done: (caseRecord.extractedFacts?.witnesses?.length || 0) > 0 },
+        },
+        tier3: {
+          title: "টায়ার ৩: নিষেধ অমান্য ও নির্বাহী এখতিয়ার",
+          item1: { label: "বারবার নিষেধ সত্ত্বেও বারণ না মানার বিবরণ", done: !!caseRecord.extractedFacts?.motiveOrPreviousDispute },
+          item2: { label: "নির্বাহী ম্যাজিস্ট্রেটের প্রতিকার (ধারা ১৩৩)", done: true },
+        },
+      }
+    : isChequeCase
+    ? {
+        tier1: {
+          title: "টায়ার ১: চেক ও ডিজঅনার সংক্রান্ত তথ্য",
+          item1: { label: "চেক প্রদানের তারিখ ও ব্যাংক শাখা", done: !!caseRecord.extractedFacts?.incidentDate },
+          item2: { label: "চেক প্রত্যাখ্যাত (Dis-honour) হওয়ার তারিখ", done: !!answers["cheque_dishonour_date"] || score >= 40 },
+        },
+        tier2: {
+          title: "টায়ার ২: দালিলিক প্রমাণ ও ব্যাংক মেমো",
+          item1: { label: "মূল চেক ও ব্যাংক ডিজঅনার স্লিপ", done: true },
+          item2: { label: "রেজিস্ট্রি লিগ্যাল নোটিশ ও প্রাপ্তি স্বীকার (A/D)", done: !!answers["legal_notice_date"] || score >= 60 },
+        },
+        tier3: {
+          title: "টায়ার ৩: আইনি তামাদি ও দায় পর্যালোচনা",
+          item1: { label: "নোটিশ প্রাপ্তির ৩০ দিন তামাদি হিসাব", done: true },
+          item2: { label: "আর্থিক দেনা বা চুক্তিভিত্তিক বৈধ দায়", done: !!caseRecord.extractedFacts?.motiveOrPreviousDispute },
+        },
+      }
+    : isCivilLand
+    ? {
+        tier1: {
+          title: "টায়ার ১: সম্পত্তির বিবরণ ও স্বত্ব",
+          item1: { label: "সুনির্দিষ্ট মৌজা, খতিয়ান ও দাগ নম্বর", done: !!caseRecord.extractedFacts?.incidentPlace },
+          item2: { label: "স্বত্ব অর্জনের মাধ্যম ও দলিলের তারিখ", done: !!caseRecord.extractedFacts?.incidentDate },
+        },
+        tier2: {
+          title: "টায়ার ২: দালিলিক পরচা ও ভোগদখল",
+          item1: { label: "সিএস/এসএ/আরএস/বিএস খতিয়ান ও নামজারি", done: !!answers["property_document"] || score >= 50 },
+          item2: { label: "শান্তিপূর্ণ ভোগদখল ও খাজনা দাখিলা", done: (caseRecord.extractedFacts?.witnesses?.length || 0) > 0 },
+        },
+        tier3: {
+          title: "টায়ার ৩: বিরোধের কারণ ও তামাদি",
+          item1: { label: "বেদখল বা বিরোধ সৃষ্টির সুনির্দিষ্ট তারিখ", done: score >= 50 || !!answers["threat_nature"] },
+          item2: { label: "স্থায়ী নিষেধাজ্ঞা ও স্বত্ব ঘোষণার এখতিয়ার", done: true },
+        },
+      }
+    : {
+        tier1: {
+          title: "টায়ার ১: প্রাথমিক আইনি উপাদান (Basic Statutory Facts)",
+          item1: { label: "ঘটনার সুনির্দিষ্ট তারিখ ও সময়", done: !!caseRecord.extractedFacts?.incidentDate },
+          item2: { label: "সুনির্দিষ্ট ঘটনাস্থল ও এখতিয়ার", done: !!caseRecord.extractedFacts?.incidentPlace },
+        },
+        tier2: {
+          title: "টায়ার ২: আলামত ও প্রমাণাদি (Evidence & Witnesses)",
+          item1: { label: "ব্যবহৃত অস্ত্র / আঘাতের ধরন", done: (caseRecord.extractedFacts?.weaponsUsed?.length || 0) > 0 || !!answers["weapon_used"] },
+          item2: { label: "প্রত্যক্ষদর্শী নিরপেক্ষ সাক্ষী", done: (caseRecord.extractedFacts?.witnesses?.length || 0) > 0 },
+        },
+        tier3: {
+          title: "টায়ার ৩: আইনি ফাঁকফোকর ও ডিফেন্স পূর্বানুমান (Legal Loopholes)",
+          item1: { label: "এজাহার দায়েরের বিলম্বের কারণ", done: score >= 50 || !!answers["delay_reason"] },
+          item2: { label: "পূর্বশত্রুতা / আত্মরক্ষা পর্যালোচনা", done: !!caseRecord.extractedFacts?.motiveOrPreviousDispute || !!answers["prior_dispute"] },
+        },
+      };
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50 border-r border-slate-200 overflow-y-auto">
@@ -113,14 +254,15 @@ export function InterrogationPanel({
           </span>
         </div>
 
-        {/* Case Completeness Meter */}
-        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-          <div className="flex items-center justify-between mb-1.5 text-xs">
-            <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <span>মামলার তথ্য সম্পূর্ণতা:</span>
+        {/* Case Completeness Meter & Investigation Progress */}
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-800 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-700" />
+              <span>Investigation Progress:</span>
             </span>
             <span
-              className={`font-extrabold ${
+              className={`font-black ${
                 score >= 90
                   ? "text-emerald-700"
                   : score >= 60
@@ -128,7 +270,7 @@ export function InterrogationPanel({
                   : "text-amber-700"
               }`}
             >
-              {score}% {score >= 90 ? "— ড্রাফটের জন্য প্রস্তুত" : "— তথ্যের ঘাটতি আছে"}
+              Investigation Progress ({Math.min(100, Math.max(score, 30))}% Complete)
             </span>
           </div>
 
@@ -141,16 +283,105 @@ export function InterrogationPanel({
                   ? "bg-indigo-600"
                   : "bg-amber-500"
               }`}
-              style={{ width: `${Math.max(5, score)}%` }}
+              style={{ width: `${Math.max(30, score)}%` }}
             />
           </div>
-          <p className="text-[10px] text-slate-500 mt-1">
-            * অপরাধের উপাদান (Ingredients of Offence) ও সেকশন রুলসের ভিত্তিতে গণনাকৃত।
+          <p className="text-[10px] text-slate-500">
+            * সিনিয়র অ্যাডভোকেট ইনভেস্টিগেশন ইঞ্জিন: অপরাধের উপাদান (Ingredients of Offence) ও সেকশন রুলসের ভিত্তিতে গণনাকৃত।
           </p>
         </div>
       </div>
 
       <div className="p-4 space-y-5 flex-1">
+        {/* Missing Facts Checklist (3 Tiers) */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+              <ClipboardList className="w-4 h-4 text-indigo-700" />
+              <span>Missing Facts Checklist (আইনি তথ্যের ৩-স্তরীয় চেকলিস্ট)</span>
+            </h4>
+            <span className="text-[10px] text-slate-500">স্বয়ংক্রিয় ফ্যাক্ট ট্র্যাকার</span>
+          </div>
+
+          {/* Tier 1 */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 inline-block">
+              {tierConfig.tier1.title}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier1.item1.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                )}
+                <span className={tierConfig.tier1.item1.done ? "text-slate-800 font-medium" : "text-amber-700"}>
+                  {tierConfig.tier1.item1.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier1.item2.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                )}
+                <span className={tierConfig.tier1.item2.done ? "text-slate-800 font-medium" : "text-amber-700"}>
+                  {tierConfig.tier1.item2.label}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tier 2 */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 inline-block">
+              {tierConfig.tier2.title}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier2.item1.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <Square className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
+                <span className="text-slate-700">{tierConfig.tier2.item1.label}</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier2.item2.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                )}
+                <span className="text-slate-700">{tierConfig.tier2.item2.label}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tier 3 */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] font-bold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 inline-block">
+              {tierConfig.tier3.title}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier3.item1.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                )}
+                <span className="text-slate-700">{tierConfig.tier3.item1.label}</span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-200/80">
+                {tierConfig.tier3.item2.done ? (
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <Square className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                )}
+                <span className="text-slate-700">{tierConfig.tier3.item2.label}</span>
+              </div>
+            </div>
+          </div>
+        </div>
         {/* Limitation Calculator Card */}
         <LimitationCard
           caseId={caseRecord.id}
@@ -440,6 +671,29 @@ export function InterrogationPanel({
               );
             })}
           </div>
+        </div>
+
+        {/* Step 2 Bottom Sequential Navigation Controls */}
+        <div className="pt-2 pb-4 flex items-center justify-between gap-3 border-t border-slate-200 mt-2">
+          {onPrevStep && (
+            <button
+              type="button"
+              onClick={onPrevStep}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs rounded-xl transition cursor-pointer"
+            >
+              <span>← ১ম ধাপ: ঘটনা পরিবর্তন</span>
+            </button>
+          )}
+
+          {onNextStep && (
+            <button
+              type="button"
+              onClick={onNextStep}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition ml-auto cursor-pointer"
+            >
+              <span>৩য় ধাপ: আদালতের আরজি ও প্রিন্ট →</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

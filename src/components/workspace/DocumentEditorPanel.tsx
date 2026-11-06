@@ -24,12 +24,14 @@ interface DocumentEditorPanelProps {
   caseRecord: CaseRecord;
   onGenerateDocument: (docType: DraftDocType, fontMode: "unicode" | "bijoy") => Promise<void>;
   isGenerating: boolean;
+  onPrevStep?: () => void;
 }
 
 export function DocumentEditorPanel({
   caseRecord,
   onGenerateDocument,
   isGenerating,
+  onPrevStep,
 }: DocumentEditorPanelProps) {
   const defaultDocType: DraftDocType =
     caseRecord.category === "Civil"
@@ -236,6 +238,17 @@ export function DocumentEditorPanel({
           </div>
 
           <div className="flex items-center gap-2">
+            {onPrevStep && (
+              <button
+                type="button"
+                onClick={onPrevStep}
+                className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
+                title="২য় ধাপের প্রশ্নাবলীতে ফিরে যান"
+              >
+                <span>← ২য় ধাপ</span>
+              </button>
+            )}
+
             {/* Font Mode Live Toggle */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
               <button

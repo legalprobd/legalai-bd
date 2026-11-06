@@ -18,13 +18,13 @@ test.describe("Final Visual & Functional QA Verification (LegalAI BD v2.0)", () 
     // 3. Verify redirection to dashboard
     await expect(page).toHaveURL(/\/dashboard|\/$/);
     await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("text=রহমান")).toBeVisible();
+    await expect(page.locator("text=রহমান").first()).toBeVisible();
 
     // 4. Reload page and verify session persistence
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard|\/$/);
     await expect(page.locator("header")).toBeVisible();
-    await expect(page.locator("text=রহমান")).toBeVisible();
+    await expect(page.locator("text=রহমান").first()).toBeVisible();
   });
 
   test("Task 2: UI/UX - Dark Mode & Command Palette", async ({ page }) => {
@@ -35,29 +35,12 @@ test.describe("Final Visual & Functional QA Verification (LegalAI BD v2.0)", () 
     await page.locator("button[type='submit']").click();
     await expect(page).toHaveURL(/\/dashboard|\/$/);
 
-    // --- Sub-task 2A: Dark Mode Toggle & Persistence ---
+    // --- Sub-task 2A: Strict Light Theme Verification ---
+    const htmlClasses = await page.locator("html").getAttribute("class");
+    expect(htmlClasses).not.toContain("dark");
+
     const themeBtn = page.locator("[data-testid='theme-toggle-btn']");
-    await expect(themeBtn).toBeVisible();
-
-    // Toggle theme to dark
-    await themeBtn.click();
-    await page.waitForTimeout(500);
-    const isDark = await page.evaluate(() =>
-      document.documentElement.classList.contains("dark")
-    );
-    expect(isDark).toBe(true);
-
-    // Reload and verify dark mode persists
-    await page.reload();
-    await page.waitForTimeout(500);
-    const persistsDark = await page.evaluate(() =>
-      document.documentElement.classList.contains("dark")
-    );
-    expect(persistsDark).toBe(true);
-
-    // Revert back to light mode for subsequent tests
-    await themeBtn.click();
-    await page.waitForTimeout(500);
+    await expect(themeBtn).toHaveCount(0);
 
     // --- Sub-task 2B: Command Palette Filter & Navigation ---
     await page.keyboard.press("Control+k");
@@ -201,13 +184,12 @@ test.describe("Final Visual & Functional QA Verification (LegalAI BD v2.0)", () 
       fullPage: false,
     });
 
-    // 2. Dashboard Dark Mode Screenshot
-    const themeBtn = page.locator("[data-testid='theme-toggle-btn']");
-    await themeBtn.click();
-    await page.waitForTimeout(500);
+    // 2. Dashboard Wide Screenshot
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(300);
 
     await page.screenshot({
-      path: path.join(screenshotsDir, "dashboard-dark.png"),
+      path: path.join(screenshotsDir, "dashboard-wide.png"),
       fullPage: false,
     });
 

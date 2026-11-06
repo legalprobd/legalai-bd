@@ -45,8 +45,8 @@ export async function POST(
       rawStatement?: string;
     };
 
-    const isNewStatement = Boolean(rawStatement && rawStatement.trim() !== existingCase.rawStatement.trim());
-    const effectiveStatement = rawStatement || existingCase.rawStatement;
+    const isNewStatement = typeof rawStatement === "string";
+    const effectiveStatement = isNewStatement ? rawStatement : existingCase.rawStatement;
 
     // Detect contradictions
     const contradictions = detectContradictions(
@@ -127,12 +127,25 @@ export async function POST(
     const status = computedScore >= 90 ? "READY_TO_DRAFT" : "INTERVIEWING";
 
     const effectiveCategory = reAnalysis.caseCategory || existingCase.category;
-    const primaryDocType: DraftDocType =
-      effectiveCategory === "Civil"
-        ? "PLAINT"
-        : effectiveCategory === "Special_Tribunal"
-        ? "CR_PETITION"
-        : "FIR";
+    const isNuisance =
+      reAnalysis.caseTitleBn.includes("ধূমপান") ||
+      reAnalysis.caseTitleBn.includes("সিগারেট") ||
+      reAnalysis.caseTitleBn.includes("উপদ্রব") ||
+      reAnalysis.caseTitleBn.includes("শব্দ") ||
+      reAnalysis.caseTitleBn.includes("গান");
+
+    const isLabour = reAnalysis.caseTitleBn.includes("বেতন") || reAnalysis.caseTitleBn.includes("পাওনা");
+    const isUnknown = reAnalysis.caseTitleBn.includes("আইনগত পরামর্শ") || reAnalysis.applicableLaws.length === 0;
+
+    const primaryDocType: DraftDocType = isNuisance || isUnknown
+      ? "GD"
+      : isLabour
+      ? "LEGAL_NOTICE"
+      : effectiveCategory === "Civil"
+      ? "PLAINT"
+      : effectiveCategory === "Special_Tribunal"
+      ? "CR_PETITION"
+      : "FIR";
 
     const effectiveFacts = isNewStatement
       ? reAnalysis.extractedFacts
@@ -164,19 +177,19 @@ export async function POST(
         "পিতা: **[পিতার নাম]**, সাং: **[ঠিকানা]**",
       accusedList: effectiveFacts.accusedList,
       unknownAccusedCount:
-        effectiveFacts.unknownAccusedCount || "৪/৫",
+        effectiveFacts.unknownAccusedCount || "",
       incidentDate:
         effectiveFacts.incidentDate ||
-        "গতকল্য রাত্রি আনুমানিক ১০:৩০ ঘটিকা",
+        "ইং **[তারিখ]**",
       incidentTime:
-        effectiveFacts.incidentTime || "রাত্রি ১০:৩০ ঘটিকা",
+        effectiveFacts.incidentTime || "",
       incidentPlace:
-        effectiveFacts.incidentPlace || "বাদীর নিজ বসতভিটায়",
+        effectiveFacts.incidentPlace || "**[ঘটনাস্থল]**",
       weaponsUsed: effectiveFacts.weaponsUsed,
       injuriesAndMedical: effectiveFacts.injuriesAndMedical || undefined,
       stolenOrDamagedItems: effectiveFacts.stolenOrDamagedItems || undefined,
       totalFinancialLoss:
-        effectiveFacts.totalFinancialLoss || "১,৫০,০০০/- টাকা",
+        effectiveFacts.totalFinancialLoss || undefined,
       motiveOrPreviousDispute:
         effectiveFacts.motiveOrPreviousDispute || undefined,
       witnesses: effectiveFacts.witnesses,

@@ -24,8 +24,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: user.fullName,
               email: user.email,
               isAdmin: Boolean(user.isAdmin),
+              role: user.role || "ADVOCATE",
             } as any;
           }
+        }
+
+        // Platform Owner seed login
+        if (
+          email === "owner@legalai.bd" &&
+          (password === "owner123" || password === "legal123")
+        ) {
+          return {
+            id: "user-platform-owner-001",
+            name: "সুপার প্ল্যাটফর্ম অ্যাডমিন (Chief Architect)",
+            email: "owner@legalai.bd",
+            isAdmin: true,
+            role: "PLATFORM_OWNER",
+          } as any;
+        }
+
+        // Demo junior credentials fallback
+        if (email === "junior@demo.bd" && (password === "legal123" || password === "demo123")) {
+          return {
+            id: "user-junior-002",
+            name: "জুনিয়র অ্যাডভোকেট তানভীর আহমেদ",
+            email: "junior@demo.bd",
+            isAdmin: false,
+            role: "JUNIOR",
+          } as any;
         }
 
         // Demo advocate credentials fallback
@@ -40,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: fallback?.fullName || "ব্যারিস্টার এম. এ. রহমান (অ্যাডভোকেট)",
             email: email || "advocate@demo.bd",
             isAdmin: true,
+            role: fallback?.role || "ADVOCATE",
           } as any;
         }
 
@@ -55,6 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.isAdmin = (user as any).isAdmin;
+        token.role = (user as any).role || "ADVOCATE";
       }
       return token;
     },
@@ -62,6 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user && token.id) {
         session.user.id = String(token.id);
         (session.user as any).isAdmin = Boolean(token.isAdmin);
+        (session.user as any).role = String(token.role || "ADVOCATE");
       }
       return session;
     },

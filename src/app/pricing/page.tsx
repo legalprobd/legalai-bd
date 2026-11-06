@@ -68,13 +68,13 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50  text-slate-900  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Navigation & Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200  pb-4">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600  hover:underline"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>ড্যাশবোর্ডে ফিরে যান</span>
@@ -89,14 +89,14 @@ export default function PricingPage() {
 
         {/* Hero Section */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 bg-indigo-100  text-indigo-700  px-3 py-1 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
             <span>স্বচ্ছ ও নিরাপদ বিকাশ / নগদ মোবাইল ব্যাংকিং পেমেন্ট</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 dark:text-slate-50">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950 ">
             আপনার চেম্বারের প্র্যাকটিসের গতি বাড়াতে সঠিক প্ল্যান বেছে নিন
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
+          <p className="text-sm sm:text-base text-slate-600 ">
             আইনি গবেষণা ও ড্রাফটিংয়ে শত শত কর্মঘণ্টা সাশ্রয় করুন। কোনো গোপন ফি নেই, যখন ইচ্ছা বাতিলযোগ্য।
           </p>
         </div>
@@ -108,8 +108,8 @@ export default function PricingPage() {
               key={p.id}
               className={`rounded-2xl flex flex-col justify-between p-6 sm:p-8 transition-all duration-200 ${
                 p.highlighted
-                  ? "bg-white dark:bg-slate-900 border-2 border-indigo-600 dark:border-indigo-500 shadow-xl relative"
-                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md"
+                  ? "bg-white  border-2 border-indigo-600  shadow-xl relative"
+                  : "bg-white  border border-slate-200  shadow-sm hover:shadow-md"
               }`}
             >
               {p.highlighted && (
@@ -120,37 +120,37 @@ export default function PricingPage() {
 
               <div className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 ">
                     {p.badge}
                   </span>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <h3 className="text-xl font-bold text-slate-900  mt-1">
                     {p.name}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500  mt-1">
                     {p.description}
                   </p>
                 </div>
 
-                <div className="border-y border-slate-100 dark:border-slate-800 py-4">
+                <div className="border-y border-slate-100  py-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-50">
+                    <span className="text-3xl sm:text-4xl font-black text-slate-900 ">
                       {p.price}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500  mt-1">
                     {p.period}
                   </p>
                 </div>
 
                 {/* Features List */}
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <p className="text-xs font-bold text-slate-700  uppercase tracking-wider">
                     অন্তর্ভুক্ত সুবিধাসমূহ:
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                  <ul className="space-y-2 text-xs text-slate-600 ">
                     {p.features.map((f, fIdx) => (
                       <li key={fIdx} className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-emerald-600  shrink-0 mt-0.5" />
                         <span>{f}</span>
                       </li>
                     ))}
@@ -164,7 +164,7 @@ export default function PricingPage() {
                   className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center block transition-all shadow-xs ${
                     p.highlighted
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20"
-                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
+                      : "bg-slate-100 hover:bg-slate-200   text-slate-800 "
                   }`}
                 >
                   {p.buttonText}
@@ -175,12 +175,12 @@ export default function PricingPage() {
         </div>
 
         {/* FAQ & Trust Note */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+        <div className="bg-white  rounded-2xl p-6 sm:p-8 border border-slate-200  text-center space-y-3">
+          <div className="flex items-center justify-center gap-2 text-emerald-600  text-sm font-bold">
             <ShieldCheck className="w-5 h-5" />
             <span>বাংলাদেশ বার কাউন্সিল আইনজীবী নীতিমালার প্রতি শ্রদ্ধাশীল</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs text-slate-500  max-w-2xl mx-auto leading-relaxed">
             আপনার চেম্বার অনুযায়ী কাস্টম এন্টারপ্রাইজ প্যাকেজ বা প্রশিক্ষণের প্রয়োজন হলে আমাদের সাপোর্ট টিমকে জানাতে পারেন। পেমেন্ট সম্পূর্ণ সুরক্ষিত ও এনক্রিপ্টেড।
           </p>
         </div>

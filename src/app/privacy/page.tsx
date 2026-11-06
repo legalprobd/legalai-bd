@@ -9,13 +9,13 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50  text-slate-900  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Navigation & Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200  pb-4">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600  hover:underline"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>ড্যাশবোর্ডে ফিরে যান</span>
@@ -29,18 +29,18 @@ export default function PrivacyPage() {
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-slate-50">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 ">
             গোপনীয়তা নীতি (Privacy Policy)
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 ">
             সর্বশেষ পরিমার্জন: নভেম্বর ২০২৬ | আইনজীবী-ক্লায়েন্ট প্রিভিলেজ ও সাইবার নিরাপত্তা নিশ্চিতে প্রতিশ্রুতিবদ্ধ
           </p>
         </div>
 
         {/* Highlight Card */}
-        <div className="p-5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-          <div className="text-xs text-emerald-950 dark:text-emerald-200 space-y-1">
+        <div className="p-5 bg-emerald-50  border border-emerald-200  rounded-xl flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-emerald-600  shrink-0 mt-0.5" />
+          <div className="text-xs text-emerald-950  space-y-1">
             <p className="font-bold">অ্যাডভোকেট-ক্লায়েন্ট তথ্যের সর্বোচ্চ নিরাপত্তা গ্যারান্টি:</p>
             <p className="leading-relaxed">
               আইন পেশার নীতি ও এভিডেন্স অ্যাক্ট ১৮৭২ (The Evidence Act 1872, Sec 126) অনুসারে অ্যাডভোকেট ও মক্কেলের মধ্যকার বার্তা ও দলিলের পূর্ণাঙ্গ গোপনীয়তা বজায় রাখা আমাদের প্রধান অগ্রাধিকার। প্ল্যাটফর্মে সংরক্ষিত কোনো মামলার তথ্য তৃতীয় পক্ষের কাছে বিক্রয় বা প্রশিক্ষণ কাজে বাণিজ্যিক উন্মুক্তকরণ করা হয় না।
@@ -49,9 +49,9 @@ export default function PrivacyPage() {
         </div>
 
         {/* Content Sections */}
-        <div className="space-y-6 text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="space-y-6 text-sm text-slate-700  leading-relaxed bg-white  p-6 md:p-8 rounded-2xl border border-slate-200  shadow-xs">
           <section className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900  flex items-center gap-2">
               <Database className="w-4 h-4 text-indigo-600" />
               ১. আমরা কী তথ্য সংগ্রহ করি?
             </h2>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900  flex items-center gap-2">
               <Lock className="w-4 h-4 text-indigo-600" />
               ২. তথ্যের প্রক্রিয়াকরণ ও এআই মডেলের ব্যবহার
             </h2>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900  flex items-center gap-2">
               <Key className="w-4 h-4 text-indigo-600" />
               ৩. ডেটা এনক্রিপশন ও ব্যাকআপ
             </h2>
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900  flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-indigo-600" />
               ৪. ডেটা মুছে ফেলা ও অ্যাডভোকেটের নিয়ন্ত্রণ
             </h2>

@@ -6,6 +6,7 @@ export interface AuthCheckResult {
   userId?: string;
   userEmail?: string;
   isAdmin?: boolean;
+  role?: string;
   response?: NextResponse;
 }
 
@@ -31,12 +32,14 @@ export async function requireAuth(): Promise<AuthCheckResult> {
 
     const userId = session.user.id || "demo-user-advocate-001";
     const isAdmin = Boolean((session.user as any).isAdmin);
+    const role = String((session.user as any).role || (isAdmin ? "ADVOCATE" : "JUNIOR"));
 
     return {
       ok: true,
       userId,
       userEmail: session.user.email || undefined,
       isAdmin,
+      role,
     };
   } catch (error) {
     console.error("Auth check failed:", error);
@@ -54,4 +57,27 @@ export async function requireAuth(): Promise<AuthCheckResult> {
       ),
     };
   }
+}
+
+export async function requirePlatformOwner(): Promise<AuthCheckResult> {
+  const check = await requireAuth();
+  if (!check.ok) return check;
+
+  if (check.role !== "PLATFORM_OWNER") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "FORBIDDEN",
+            messageBn: "শুধুমাত্র প্ল্যাটফর্ম ওনার (সুপার অ্যাডমিন) এই পৃষ্ঠায় প্রবেশ করতে পারবেন।",
+          },
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return check;
 }
