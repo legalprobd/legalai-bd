@@ -23,6 +23,8 @@ export interface TemplateData {
   witnesses?: string[];
   applicableLaws?: ApplicableLaw[];
   caseTitle?: string;
+  evidenceOcrSnippets?: string;
+  evidenceFiles?: any[];
 }
 
 export const MANDATORY_DISCLAIMER_HTML = `
@@ -227,6 +229,13 @@ export function generateFirTemplate(data: TemplateData): string {
     }
   </div>
 
+
+  ${data.evidenceOcrSnippets ? `
+  <div class="mb-5 p-3.5 bg-slate-50 border-l-4 border-indigo-600 rounded text-sm text-slate-800">
+    <p class="font-bold text-indigo-950 mb-1">দালিলিক প্রমাণ ও চিকিৎসা সনদ (Documentary & Medical Evidence Reference):</p>
+    <p class="leading-relaxed whitespace-pre-wrap">${data.evidenceOcrSnippets}</p>
+  </div>
+  ` : ""}
   <div class="mb-6 text-justify">
     <p class="font-bold">অতএব প্রার্থনা:</p>
     <p class="indent-8">

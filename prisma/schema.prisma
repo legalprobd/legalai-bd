@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 enum Role {
@@ -268,5 +270,6 @@ model CasePrecedent {
   titleBn   String
   summaryBn String   @db.Text
   keywords  String   @db.Text
+  embedding Unsupported("vector(1536)")?
   createdAt DateTime @default(now())
 }

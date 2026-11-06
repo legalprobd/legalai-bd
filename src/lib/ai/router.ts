@@ -128,7 +128,8 @@ Return a strict JSON matching CaseAnalysisResponseSchema:
     { "questionBn": "পরবর্তী করণীয় বা তথ্য উদঘাটনের জন্য সুনির্দিষ্ট প্রশ্ন?" }
   ],
   "strategicAdviceForAdvocateBn": [ ... ],
-  "contradictionsDetectedBn": [ ... ]
+  "contradictionsDetectedBn": [ ... ],
+  "opponentsWeaknessesBn": [ "বিপক্ষ আইনজীবী এই দুর্বলতার সুযোগ নিতে পারে...", ... ]
 }
 `;
         const result = await model.generateContent(prompt);

@@ -59,6 +59,7 @@ export const CaseAnalysisResponseSchema = z.object({
   followUpQuestions: z.array(FollowUpQuestionSchema),
   strategicAdviceForAdvocateBn: z.array(z.string()).optional().default([]),
   contradictionsDetectedBn: z.array(z.string()).optional().default([]),
+  opponentsWeaknessesBn: z.array(z.string()).optional().default([]),
 });
 
 export const DraftDocTypeEnum = z.enum([
@@ -179,6 +180,7 @@ export interface CaseRecord {
   status: "INTERVIEWING" | "READY_TO_DRAFT" | "COMPLETED";
   strategicAdvice: string[];
   contradictionsDetected: string[];
+  opponentsWeaknessesBn?: string[];
   questions: Array<{
     id: string;
     fieldKey: string;

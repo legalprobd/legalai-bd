@@ -389,6 +389,39 @@ export function InterrogationPanel({
           initialTriggerDate={caseRecord.limitationTriggerDate}
         />
 
+        {/* Devil's Advocate Analysis Card - Opposition's Likely Arguments & Weaknesses */}
+        <div className="p-4 bg-rose-50/90 border border-rose-300 rounded-xl text-rose-900 text-xs shadow-xs">
+          <div className="flex items-center justify-between mb-2 pb-2 border-b border-rose-200">
+            <div className="flex items-center gap-2 font-bold text-rose-800">
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
+              <span className="text-xs uppercase tracking-wide">
+                বিপক্ষের সম্ভাব্য যুক্তি ও দুর্বলতা
+              </span>
+            </div>
+            <span className="text-[10px] bg-rose-200 text-rose-800 font-bold px-2 py-0.5 rounded-full">
+              আদালত ডিফেন্স সতর্কতা
+            </span>
+          </div>
+          <p className="text-[11px] text-rose-700 mb-2 leading-relaxed">
+            বিজ্ঞ আইনজীবীর অবগতির জন্য: বিপক্ষ কৌঁসুলি শুনানিকালে বর্তমান তথ্যের ভিত্তিতে আদালতে যেসকল আপত্তি বা দুর্বলতার সুযোগ গ্রহণ করতে পারে:
+          </p>
+          <ul className="space-y-2">
+            {(caseRecord.opponentsWeaknessesBn && caseRecord.opponentsWeaknessesBn.length > 0
+              ? caseRecord.opponentsWeaknessesBn
+              : [
+                  "দেরিতে মামলা/এজাহার দায়েরের সুযোগ: ঘটনার পরপরই অভিযোগ দাখিল না করার বিলম্বকে বিপক্ষ পক্ষ পরামর্শভিত্তিক সাজানো বয়ান দাবি করবে।",
+                  "সুনির্দিষ্ট ভূমিকার অস্পষ্টতা: আসামিদের পৃথক পৃথক ভূমিকা ও আঘাতের সুনির্দিষ্ট বিবরণ ছাড়া পাইকারি অভিযোগ বলে খালাসের আবেদন হতে পারে।",
+                  "দালিলিক ও ইনজুরি সনদের সামঞ্জস্য: ঘটনার সমর্থক স্বাধীন প্রত্যক্ষদর্শী সাক্ষী ও মেডিকেল সার্টিফিকেটের গরমিলকে বিপক্ষ পক্ষ মূল অস্ত্র বানাবে।"
+                ]
+            ).map((weakness, i) => (
+              <li key={i} className="flex items-start gap-2 bg-white/70 p-2 rounded-lg border border-rose-200/80">
+                <span className="text-rose-600 font-black shrink-0 text-xs mt-0.5">⚠️</span>
+                <span className="text-rose-900 font-medium leading-relaxed">{weakness}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* Contradiction Warnings Card */}
         {caseRecord.contradictionsDetected &&
           caseRecord.contradictionsDetected.length > 0 && (

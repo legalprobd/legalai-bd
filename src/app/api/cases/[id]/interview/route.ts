@@ -222,6 +222,7 @@ export async function POST(
         ...appliedReasons,
       ],
       contradictionsDetected: contradictions,
+      opponentsWeaknessesBn: reAnalysis.opponentsWeaknessesBn || [],
       questions: finalQuestions,
       documents: documentsToSave,
     });

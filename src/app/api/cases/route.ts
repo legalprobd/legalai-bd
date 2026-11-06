@@ -146,6 +146,7 @@ export async function POST(request: Request) {
       status: "INTERVIEWING",
       strategicAdvice: analysis.strategicAdviceForAdvocateBn,
       contradictionsDetected: analysis.contradictionsDetectedBn || [],
+      opponentsWeaknessesBn: analysis.opponentsWeaknessesBn || [],
       limitationCaseType: isHumanitarian
         ? "HUMANITARIAN_EMERGENCY_RESCUE"
         : isNuisance

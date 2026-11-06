@@ -480,6 +480,7 @@ export function generateMockCaseAnalysis(
         "ঘটনার বিস্তারিত বিবরণ জেনে সাধারণ ডায়েরি (GD) বা নোটিশ প্রদানের বিষয়টি বিবেচনা করুন।",
       ],
       contradictionsDetectedBn: [],
+      opponentsWeaknessesBn: ["সুনির্দিষ্ট সাক্ষ্য ও দালিলিক প্রমাণের অভাবে প্রতিপক্ষ কৌঁসুলি মামলাটির কার্যকারিতা চ্যালেঞ্জ করতে পারে।"],
     };
   }
 
@@ -1375,6 +1376,23 @@ export function generateMockCaseAnalysis(
     category = "General";
   }
 
+  const opponentsWeaknessesBn: string[] = [];
+  if (hasLandOrHomeGrab || isCivilProperty) {
+    opponentsWeaknessesBn.push("স্বত্বগত বিরোধের দাবি: বিবাদী পক্ষ দাবি করবে এটি একটি দেওয়ানি স্বত্ব ও দখলের বিরোধ, যা ফৌজদারি অপরাধ নয়।");
+    opponentsWeaknessesBn.push("বিলম্বের সুযোগ: অনধিকার প্রবেশের পর মামলা দায়েরে বিলম্বকে আপোষ-মীমাংসার ব্যর্থতা পরবর্তী সাজানো অভিযোগ বলে দাবি করতে পারে।");
+    opponentsWeaknessesBn.push("দালিলিক মালিকানা চ্যালেঞ্জ: আরজিতে সিএস, এসএ, আরএস খতিয়ানের ধারাবাহিক চেইন না থাকলে পক্ষদোষ ও স্বত্বহীনতার আপত্তি তুলবে।");
+  } else if (isViolentAssaultOrRobbery || isRobbery) {
+    opponentsWeaknessesBn.push("দেরিতে এজাহার দায়েরের আপত্তি: ঘটনার পর থানায় পৌঁছাতে বিলম্ব হওয়ায় বিপক্ষ পক্ষ মামলাটিকে পরামর্শভিত্তিক সাজানো বয়ান দাবি করবে।");
+    opponentsWeaknessesBn.push("পাইকারি ভূমিকা আরোপ: একাধিক আসামির বিরুদ্ধে আলাদা ভূমিকা সুনির্দিষ্ট না থাকলে আসামিপক্ষ খালাসের জোরালো আবেদন করবে।");
+    opponentsWeaknessesBn.push("মেডিকেল ইনজুরি রিপোর্টের ঘাটতি: জখমের গভীরতা ও অস্ত্রের ধরনের সাথে রেজিস্টার্ড হাসপাতালের ইনজুরি সনদের গরমিল থাকলে ৩২৬/৩০৭ ধারা বাতিল দাবি করবে।");
+  } else if (isCheque) {
+    opponentsWeaknessesBn.push("লিগ্যাল নোটিশ জারির মেয়াদ: ৩০ দিনের মধ্যে নোটিশ প্রাপ্তির প্রমাণ বা প্রাপ্তি স্বীকারপত্র না থাকলে মামলাটি কার্যবিধিগত কারণে খারিজ চাইতে পারে।");
+    opponentsWeaknessesBn.push("সিকিউরিটি চেক প্রতিরক্ষা: চেকটি বৈধ ঋণের জন্য নয় বরং জামানত হিসেবে রাখা হয়েছিল মর্মে বিবাদী পক্ষ আত্মপক্ষ সমর্থন করবে।");
+  } else {
+    opponentsWeaknessesBn.push("এখতিয়ারের আপত্তি: বিজ্ঞ আদালতের আঞ্চলিক ও আর্থিক এখতিয়ার সুনির্দিষ্টভাবে চ্যালেঞ্জ করা হতে পারে।");
+    opponentsWeaknessesBn.push("স্বতন্ত্র নিরপেক্ষ সাক্ষীর অভাব: বাদীপক্ষের স্বার্থসংশ্লিষ্ট ছাড়া স্বাধীন নিরপেক্ষ সাক্ষী না থাকায় সাক্ষ্য আইনের দুর্বলতা তুলে ধরবে।");
+  }
+
   return {
     caseTitleBn: title,
     caseCategory: category,
@@ -1399,5 +1417,6 @@ export function generateMockCaseAnalysis(
     followUpQuestions: finalQuestions,
     strategicAdviceForAdvocateBn: advice,
     contradictionsDetectedBn: [],
+    opponentsWeaknessesBn,
   };
 }
