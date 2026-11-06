@@ -5,266 +5,252 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  FolderOpen,
   Users,
   Calendar,
-  CheckSquare,
-  Building2,
-  Scale,
+  FileCheck2,
+  FileText,
   Calculator,
-  Search,
   BookOpen,
   FileSearch,
+  Scale,
+  Swords,
   CreditCard,
-  TrendingUp,
   Settings,
   Shield,
-  ShieldAlert,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
   PlusCircle,
-  FileText,
-  UserCheck,
-  Layers,
-  Swords,
-  MessageSquare,
-  ListOrdered,
-  Sparkles,
+  Clock,
+  Printer,
+  ChevronDown,
 } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [toolsOpen, setToolsOpen] = useState(true);
 
-  const mainNav = [
-    { label: "চেম্বার ড্যাশবোর্ড", href: "/dashboard", icon: LayoutDashboard },
-    { label: "মক্কেল ডিরেক্টরি", href: "/clients", icon: Users },
-    { label: "কজ লিস্ট ও ক্যালেন্ডার", href: "/calendar", icon: Calendar },
-    { label: "লাইভ কজলিস্ট ট্র্যাকার", href: "/cause-list-tracker", icon: ListOrdered },
-    { label: "টাস্ক ও ডেলিগেশন", href: "/tasks", icon: CheckSquare },
-    { label: "চেম্বার সেটিংস ও টিম", href: "/chamber/settings", icon: Building2 },
-  ];
-
-  const legalTools = [
-    { label: "দলিল ও খতিয়ান চেইন অডিট", href: "/khatian-audit", icon: Layers },
-    { label: "এআই জেরা ও ট্রায়াল ড্রিল", href: "/cross-exam", icon: Swords },
-    { label: "মক্কেল অটোমেটেড নোটিফিকেশন", href: "/client-notify", icon: MessageSquare },
-    { label: "কোর্ট ফি ক্যালকুলেটর", href: "/court-fee", icon: Calculator },
-    { label: "কনফ্লিক্ট অফ ইন্টারেস্ট", href: "/conflict-check", icon: UserCheck },
-    { label: "সুপ্রিম কোর্ট নজির (Precedents)", href: "/research", icon: BookOpen },
-    { label: "চুক্তিপত্র ও দলিল অডিট", href: "/contract-review", icon: FileSearch },
-    { label: "মক্কেল ট্রাস্ট লেজার (IOLTA)", href: "/billing/trust", icon: CreditCard },
-    { label: "মক্কেল পোর্টাল ভিউ", href: "/portal", icon: ExternalLink },
-    { label: "অনলাইন ইনটেক ফর্ম", href: "/intake", icon: FileText },
-  ];
-
-  const dailyUtilities = [
-    { label: "Court Essentials (দৈনিক স্লিপ ও দরখাস্ত)", href: "/court-essentials", icon: Scale },
-    { label: "TR-4 Challan (ট্রেজারি চালান)", href: "/court-fee/tr4", icon: FileText },
-  ];
-
-  const advancedAiTools = [
-    { label: "Precedent Search (নজির ও নজিরপত্র)", href: "/precedent", icon: BookOpen },
-    { label: "Contract Reviewer (চুক্তিপত্র এআই অডিট)", href: "/contract-review", icon: FileSearch },
-    { label: "Bail Predictor (জামিন পূর্বাভাস)", href: "/bail-predictor", icon: Scale },
-    { label: "Mock Trial (সাক্ষী জেরা সিমুলেটর)", href: "/mock-trial", icon: Swords },
-  ];
-
-  const bottomNav = [
-    { label: "বিলিং ও সাবস্ক্রিপশন", href: "/billing", icon: CreditCard },
-    { label: "চেম্বার অ্যানালিটিক্স", href: "/analytics", icon: TrendingUp },
-    { label: "আইনজীবী প্রোফাইল", href: "/settings", icon: Settings },
-    { label: "অ্যাডমিন গভর্ন্যান্স", href: "/admin", icon: Shield },
-    { label: "সুপার অ্যাডমিন কনসোল", href: "/super-admin", icon: ShieldAlert, highlight: true },
-  ];
-
-  const isActive = (path: string) => {
+  const isCurrent = (path: string) => {
     if (path === "/dashboard" && (pathname === "/" || pathname === "/dashboard")) return true;
-    return pathname.startsWith(path);
+    return pathname === path || (path !== "/dashboard" && pathname.startsWith(path));
   };
 
   return (
-    <aside className="w-64 shrink-0 bg-white border-r border-slate-200 hidden lg:flex flex-col justify-between min-h-[calc(100vh-65px)] select-none">
-      <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
-        {/* Quick New Case CTA */}
+    <aside className="w-64 shrink-0 bg-slate-900 text-slate-300 hidden lg:flex flex-col justify-between min-h-[calc(100vh-65px)] select-none border-r border-slate-800 shadow-xl">
+      <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-80px)]">
+        {/* Action Button: New Case */}
         <div>
           <Link
-            href="/dashboard"
-            className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-xl shadow-xs transition"
+            href="/dashboard?action=new"
+            className="w-full flex items-center justify-center gap-2.5 px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md transition-all active:scale-95"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span>নতুন মামলা শুরু করুন</span>
+            <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+            <span>নতুন মামলা নথিভুক্ত করুন</span>
           </Link>
         </div>
 
-        {/* Main Navigation */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">
-            প্রধান মেনু
-          </span>
-          <nav className="mt-2 space-y-0.5">
-            {mainNav.map((item) => {
-              const active = isActive(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                    active
-                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${active ? "text-indigo-700" : "text-slate-600"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+        {/* Pillar 1: মেইন চেম্বার (Core Chamber) */}
+        <div className="space-y-1.5">
+          <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span>মেইন চেম্বার ও ডকেট</span>
+          </div>
+          <nav className="space-y-0.5">
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/dashboard")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-amber-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4 text-amber-400" />
+              <span>চেম্বার ড্যাশবোর্ড ও বোর্ড</span>
+            </Link>
+
+            <Link
+              href="/calendar"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/calendar")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-amber-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>কোর্ট ক্যালেন্ডার ও কজলিস্ট</span>
+            </Link>
+
+            <Link
+              href="/clients"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/clients")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-amber-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Users className="w-4 h-4 text-slate-400" />
+              <span>মক্কেল ডিরেক্টরি ও যোগাযোগ</span>
+            </Link>
           </nav>
         </div>
 
-        {/* Daily Utilities */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">
-            Daily Utilities
-          </span>
-          <nav className="mt-2 space-y-0.5">
-            {dailyUtilities.map((item) => {
-              const active = isActive(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                    active
-                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${active ? "text-indigo-700" : "text-slate-600"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+        {/* Pillar 2: দৈনিক আদালত ইউটিলিটি (Daily Court Essentials) */}
+        <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+          <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            <span>দৈনিক আদালত ফাইলিং</span>
+          </div>
+          <nav className="space-y-0.5">
+            <Link
+              href="/court-essentials"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/court-essentials")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-blue-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <FileCheck2 className="w-4 h-4 text-blue-400" />
+              <span>হাজিরা, সময় ও ওকালতনামা</span>
+            </Link>
+
+            <Link
+              href="/court-fee/tr4"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/court-fee/tr4")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-blue-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Printer className="w-4 h-4 text-slate-400" />
+              <span>টিআর-৪ ট্রেজারি চালান</span>
+            </Link>
+
+            <Link
+              href="/court-fee"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/court-fee")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-blue-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Calculator className="w-4 h-4 text-slate-400" />
+              <span>কোর্ট ফি ক্যালকুলেটর</span>
+            </Link>
           </nav>
         </div>
 
-        {/* Advanced AI Tools */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 px-3 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-indigo-600" />
-            <span>Advanced AI Tools</span>
-          </span>
-          <nav className="mt-2 space-y-0.5">
-            {advancedAiTools.map((item) => {
-              const active = isActive(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                    active
-                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${active ? "text-indigo-700" : "text-slate-600"}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+        {/* Pillar 3: লিগ্যাল এআই ও নজির গবেষণা (AI Intelligence & Research) */}
+        <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+          <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>এআই লিগ্যাল স্টুডিও</span>
+          </div>
+          <nav className="space-y-0.5">
+            <Link
+              href="/precedent"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/precedent") || isCurrent("/research")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-emerald-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-emerald-400" />
+              <span>সুপ্রিম কোর্ট নজির (DLR/BLC)</span>
+            </Link>
+
+            <Link
+              href="/contract-review"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/contract-review")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-emerald-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <FileSearch className="w-4 h-4 text-slate-400" />
+              <span>চুক্তিপত্র ও দলিল অডিট</span>
+            </Link>
+
+            <Link
+              href="/bail-predictor"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/bail-predictor")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-emerald-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Scale className="w-4 h-4 text-slate-400" />
+              <span>জামিন ফলাফল পূর্বাভাস (BLAST)</span>
+            </Link>
+
+            <Link
+              href="/mock-trial"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/mock-trial") || isCurrent("/cross-exam")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-emerald-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Swords className="w-4 h-4 text-slate-400" />
+              <span>সাক্ষী জেরা ড্রিল (Mock Trial)</span>
+            </Link>
           </nav>
         </div>
 
-        {/* Legal Tools Accordion */}
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={() => setToolsOpen(!toolsOpen)}
-            className="w-full flex items-center justify-between px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 hover:text-slate-800 transition"
-          >
-            <span>বাংলাদেশ লিগ্যাল টুলস</span>
-            {toolsOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          </button>
+        {/* Pillar 4: চেম্বার ও সেটিংস (Administration) */}
+        <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
+          <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+            <span>প্রশাসন ও হিসাব</span>
+          </div>
+          <nav className="space-y-0.5">
+            <Link
+              href="/billing"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/billing")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-purple-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <CreditCard className="w-4 h-4 text-slate-400" />
+              <span>চেম্বার হিসাব ও লেজার</span>
+            </Link>
 
-          {toolsOpen && (
-            <nav className="mt-2 space-y-0.5">
-              {legalTools.map((item) => {
-                const active = isActive(item.href);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                      active
-                        ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <Icon className={`w-3.5 h-3.5 ${active ? "text-indigo-700" : "text-slate-600"}`} />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          )}
-        </div>
+            <Link
+              href="/settings"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/settings")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-purple-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Settings className="w-4 h-4 text-slate-400" />
+              <span>আইনজীবী সনদ ও প্রোফাইল</span>
+            </Link>
 
-        {/* Governance & SaaS Console */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 px-3">
-            ব্যবস্থাপনা ও অডিট
-          </span>
-          <nav className="mt-2 space-y-0.5">
-            {bottomNav.map((item) => {
-              const active = isActive(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
-                    active
-                      ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                      : item.highlight
-                      ? "text-purple-700 bg-purple-50/60 hover:bg-purple-100/60 font-bold"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${
-                      active
-                        ? "text-indigo-700"
-                        : item.highlight
-                        ? "text-purple-600"
-                        : "text-slate-600"
-                    }`}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            <Link
+              href="/admin"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                isCurrent("/admin")
+                  ? "bg-slate-800 text-white font-semibold border-l-3 border-purple-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Shield className="w-4 h-4 text-slate-400" />
+              <span>অ্যাডমিন গভর্ন্যান্স</span>
+            </Link>
           </nav>
         </div>
       </div>
 
-      {/* Chamber Status Footer */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50/80">
+      {/* Chamber Status Bar */}
+      <div className="p-3.5 border-t border-slate-800 bg-slate-950/60">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
             রপ
           </div>
-          <div className="overflow-hidden">
-            <span className="text-xs font-bold text-slate-900 block truncate">
-              রহমান অ্যান্ড পার্টনার্স
-            </span>
-            <span className="text-[10px] text-emerald-700 font-medium block">
-              ● PRO চেম্বার সক্রিয়
-            </span>
+          <div className="truncate">
+            <div className="text-xs font-bold text-white truncate">রহমান অ্যান্ড পার্টনার্স</div>
+            <div className="text-[10px] text-emerald-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>PRO চেম্বার সক্রিয়</span>
+            </div>
           </div>
         </div>
       </div>

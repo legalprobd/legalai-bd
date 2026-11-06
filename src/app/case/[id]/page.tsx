@@ -24,6 +24,8 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
+  FileCheck2,
+  Printer,
 } from "lucide-react";
 import { AppNavbar } from "@/components/common/AppNavbar";
 
@@ -344,21 +346,49 @@ function CaseWorkspaceInner() {
             </button>
           </div>
 
-          {/* Links to Court Diary and Evidence Vault */}
-          <div className="flex items-center gap-3 text-xs font-medium">
+          {/* 1-Click Court Filing Toolbar */}
+          <div className="flex items-center gap-2 text-xs font-medium flex-wrap">
+            <Link
+              href={`/court-essentials?caseNo=${encodeURIComponent(caseRecord.title)}&court=${encodeURIComponent(caseRecord.courtName || "বিজ্ঞ আদালত")}&type=hazira`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-200 transition"
+              title="এই মামলার আজকের আসামির হাজিরা স্লিপ প্রস্তুত করুন"
+            >
+              <FileCheck2 className="w-3 h-3" />
+              <span>হাজিরা স্লিপ</span>
+            </Link>
+
+            <Link
+              href={`/court-essentials?caseNo=${encodeURIComponent(caseRecord.title)}&court=${encodeURIComponent(caseRecord.courtName || "বিজ্ঞ আদালত")}&type=time_petition`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-md border border-amber-200 transition"
+              title="এই মামলার শুনানির সময় প্রার্থনার দরখাস্ত প্রস্তুত করুন"
+            >
+              <Clock className="w-3 h-3" />
+              <span>সময় দরখাস্ত</span>
+            </Link>
+
+            <Link
+              href={`/court-essentials?caseNo=${encodeURIComponent(caseRecord.title)}&court=${encodeURIComponent(caseRecord.courtName || "বিজ্ঞ আদালত")}&type=vakalatnama`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition"
+              title="এই মামলার ওকালতনামা প্রস্তুত করুন"
+            >
+              <Scale className="w-3 h-3" />
+              <span>ওকালতনামা</span>
+            </Link>
+
             <Link
               href={`/case/${caseId}/hearings`}
-              className="text-slate-500 hover:text-indigo-600 flex items-center gap-1"
+              className="text-slate-600 hover:text-slate-900 flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-200 text-[11px]"
             >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>কোর্ট ডায়েরি ({caseRecord.hearings?.length || 0})</span>
+              <Calendar className="w-3 h-3 text-slate-500" />
+              <span>শুনানি ({caseRecord.hearings?.length || 0})</span>
             </Link>
+
             <Link
               href={`/case/${caseId}/evidence`}
-              className="text-slate-500 hover:text-indigo-600 flex items-center gap-1"
+              className="text-slate-600 hover:text-slate-900 flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-200 text-[11px]"
             >
-              <FileBox className="w-3.5 h-3.5" />
-              <span>প্রমাণপত্র ভল্ট ({caseRecord.evidenceFiles?.length || 0})</span>
+              <FileBox className="w-3 h-3 text-slate-500" />
+              <span>নথিপত্র ({caseRecord.evidenceFiles?.length || 0})</span>
             </Link>
           </div>
         </div>
