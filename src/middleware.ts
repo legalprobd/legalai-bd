@@ -11,7 +11,11 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/calendar") ||
     pathname.startsWith("/billing") ||
     pathname.startsWith("/settings") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/precedent") ||
+    pathname.startsWith("/contract-review") ||
+    pathname.startsWith("/bail-predictor") ||
+    pathname.startsWith("/mock-trial");
 
   if (!isProtected) {
     return NextResponse.next();
@@ -41,5 +45,9 @@ export const config = {
     "/billing/:path*",
     "/settings/:path*",
     "/admin/:path*",
+    "/precedent/:path*",
+    "/contract-review/:path*",
+    "/bail-predictor/:path*",
+    "/mock-trial/:path*",
   ],
 };

@@ -66,6 +66,8 @@ export function Sidebar() {
   const advancedAiTools = [
     { label: "Precedent Search (নজির ও নজিরপত্র)", href: "/precedent", icon: BookOpen },
     { label: "Contract Reviewer (চুক্তিপত্র এআই অডিট)", href: "/contract-review", icon: FileSearch },
+    { label: "Bail Predictor (জামিন পূর্বাভাস)", href: "/bail-predictor", icon: Scale },
+    { label: "Mock Trial (সাক্ষী জেরা সিমুলেটর)", href: "/mock-trial", icon: Swords },
   ];
 
   const bottomNav = [
