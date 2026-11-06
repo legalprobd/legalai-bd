@@ -41,7 +41,8 @@ export async function requireAuth(): Promise<AuthCheckResult> {
       isAdmin,
       role,
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest?.startsWith?.("NEXT_") || error?.digest === "HANGING_PROMISE_REJECTION") throw error;
     console.error("Auth check failed:", error);
     return {
       ok: false,

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
 
     // 1. Try Prisma DB first
     try {
+
       if (prisma && prisma.casePrecedent) {
         const whereClause: any = {};
         if (q) {
@@ -50,7 +51,8 @@ export async function GET(req: NextRequest) {
       total: results.length,
       source: "store",
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.digest?.startsWith?.("NEXT_") || error?.digest === "HANGING_PROMISE_REJECTION") throw error;
     console.error("Error searching precedents:", error);
     return NextResponse.json(
       { ok: false, error: "Internal Server Error" },

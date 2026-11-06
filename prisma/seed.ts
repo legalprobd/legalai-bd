@@ -323,7 +323,7 @@ async function main() {
   console.log(`Successfully seeded ${lawSections.length} real Bangladesh Law Sections in PostgreSQL.`);
 
   // 3. Real Supreme Court Precedents (DLR / BLC)
-  const { FAMOUS_BANGLADESH_PRECEDENTS } = await import("../src/lib/precedents/seedPrecedents");
+  const { FAMOUS_BANGLADESH_PRECEDENTS } = await import("../src/lib/precedents/seedPrecedents.ts");
   for (const p of FAMOUS_BANGLADESH_PRECEDENTS) {
     await prisma.casePrecedent.upsert({
       where: { citation: p.citation },
