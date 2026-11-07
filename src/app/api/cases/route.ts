@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         ? "NI_ACT_138_NOTICE"
         : "CRIMINAL_FIR",
       limitationTriggerDate: new Date().toISOString(),
-      questions: analysis.followUpQuestions.map((q, idx) => ({
+      questions: analysis.followUpQuestions.slice(0, 4).map((q, idx) => ({
         id: `q-${Date.now()}-${idx}`,
         fieldKey: q.fieldKey,
         questionBn: q.questionBn,

@@ -386,14 +386,20 @@ export function StatementInputPanel({
 
         {/* Step 1 Bottom Action */}
         {onNextStep && (
-          <div className="pt-2 pb-4">
+          <div className="pt-2 pb-4 space-y-1.5">
             <button
               type="button"
               onClick={onNextStep}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer"
+              disabled={isAnalyzing || (statement || "").trim().length < 20}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer"
             >
               <span>২য় ধাপে যান (আইনি মূল্যায়ন ও জেরা) →</span>
             </button>
+            {(statement || "").trim().length < 20 && (
+              <p className="text-[10px] text-amber-700 text-center">
+                * পরবর্তী ধাপে যাওয়ার জন্য অন্তত ২০ অক্ষরের ঘটনার বিবরণ প্রয়োজন (বর্তমানে {(statement || "").trim().length} অক্ষর)
+              </p>
+            )}
           </div>
         )}
       </div>

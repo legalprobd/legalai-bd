@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeCaseStatement } from "@/lib/ai/router";
+import { analyzeCaseStatement, mapApplicableLawsWithLLM } from "@/lib/ai/router";
+import { getDefaultDocTypeForCategory } from "@/lib/law/documentSelection";
 import { detectContradictions, enforcePlaceholders } from "@/lib/ai/guards";
 import { applySectionUpgrades } from "@/lib/law/upgradeRules";
 import { computeCompleteness } from "@/lib/law/completeness";
@@ -193,7 +194,7 @@ export async function POST(
       motiveOrPreviousDispute:
         effectiveFacts.motiveOrPreviousDispute || undefined,
       witnesses: effectiveFacts.witnesses,
-      applicableLaws: reAnalysis.applicableLaws,
+      applicableLaws: finalLaws,
       caseTitle: reAnalysis.caseTitleBn,
     };
 

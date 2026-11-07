@@ -35,6 +35,8 @@ export function InterrogationPanel({
 }: InterrogationPanelProps) {
   // Local state for pending answers
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [currentAnswer, setCurrentAnswer] = useState<string>("");
+  const [showAnsweredHistory, setShowAnsweredHistory] = useState<boolean>(false);
   const [expandedLaws, setExpandedLaws] = useState<Record<string, boolean>>({
     "0": true,
     "1": true,
@@ -43,7 +45,22 @@ export function InterrogationPanel({
     "ev-0": true,
   });
 
+  const questions = caseRecord.questions || [];
+  const answeredQuestions = questions.filter((q) => q.isAnswered);
+  const pendingQuestions = questions.filter((q) => !q.isAnswered);
+  const currentQuestion = pendingQuestions[0];
+  const laws = caseRecord.applicableLaws || [];
+  const score = caseRecord.completenessScore || 0;
+
+  // Sync current question answer
+  React.useEffect(() => {
+    if (currentQuestion) {
+      setCurrentAnswer(answers[currentQuestion.fieldKey] || "");
+    }
+  }, [currentQuestion?.id, currentQuestion?.fieldKey]);
+
   const handleSelectOption = (fieldKey: string, value: string) => {
+    setCurrentAnswer(value);
     setAnswers((prev) => ({
       ...prev,
       [fieldKey]: value,
@@ -51,24 +68,28 @@ export function InterrogationPanel({
   };
 
   const handleToggleMultiOption = (fieldKey: string, value: string) => {
-    setAnswers((prev) => {
-      const current = prev[fieldKey] ? prev[fieldKey].split(", ") : [];
-      let updated: string[];
-      if (current.includes(value)) {
-        updated = current.filter((item) => item !== value);
-      } else {
-        updated = [...current, value];
-      }
-      return {
-        ...prev,
-        [fieldKey]: updated.join(", "),
-      };
-    });
+    const current = currentAnswer ? currentAnswer.split(", ").filter(Boolean) : [];
+    let updated: string[];
+    if (current.includes(value)) {
+      updated = current.filter((item) => item !== value);
+    } else {
+      updated = [...current, value];
+    }
+    const joined = updated.join(", ");
+    setCurrentAnswer(joined);
+    setAnswers((prev) => ({
+      ...prev,
+      [fieldKey]: joined,
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSingleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmitAnswers(answers);
+    if (!currentQuestion || !currentAnswer.trim() || isSubmitting) return;
+    const key = currentQuestion.fieldKey;
+    const val = currentAnswer.trim();
+    await onSubmitAnswers({ [key]: val });
+    setCurrentAnswer("");
   };
 
   const toggleLawExpand = (idx: string) => {
@@ -84,11 +105,6 @@ export function InterrogationPanel({
       [id]: !prev[id],
     }));
   };
-
-  const questions = caseRecord.questions || [];
-  const pendingQuestions = questions.filter((q) => !q.isAnswered);
-  const laws = caseRecord.applicableLaws || [];
-  const score = caseRecord.completenessScore || 0;
 
   const isSmokingNuisance =
     (caseRecord.title && (caseRecord.title.includes("ধূমপান") || caseRecord.title.includes("ধুমপান") || caseRecord.title.includes("সিগারেট") || caseRecord.title.includes("উপদ্রব"))) ||
@@ -443,14 +459,30 @@ export function InterrogationPanel({
           <div className="flex items-center justify-between mb-3 border-b pb-2">
             <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
               <HelpCircle className="w-4 h-4 text-indigo-600" />
-              <span>প্রয়োজনীয় প্রশ্নাবলি (Missing Fact-Finder)</span>
+              <span>
+                {pendingQuestions.length > 0
+                  ? `ধারাবাহিক অনুসন্ধান (প্রশ্ন ${answeredQuestions.length + 1}/${questions.length || 1})`
+                  : "অনুসন্ধান সমাপ্ত"}
+              </span>
             </h4>
             <span className="text-[11px] bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full border border-indigo-200">
-              {pendingQuestions.length}টি প্রশ্ন বাকি
+              {pendingQuestions.length > 0
+                ? `${pendingQuestions.length}টি প্রশ্ন বাকি`
+                : "সম্পন্ন"}
             </span>
           </div>
 
-          {pendingQuestions.length === 0 ? (
+          {isSubmitting ? (
+            <div className="p-6 text-center bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs font-bold text-indigo-900">
+                পরবর্তী প্রশ্ন প্রস্তুত হচ্ছে...
+              </p>
+              <p className="text-[10px] text-indigo-700">
+                তথ্য বিশ্লেষণ ও আইনি ধারা পুনর্মূল্যায়ন চলছে
+              </p>
+            </div>
+          ) : pendingQuestions.length === 0 ? (
             <div className="p-4 text-center bg-emerald-50 rounded-lg border border-emerald-200 text-emerald-800 text-xs">
               <CheckCircle className="w-6 h-6 mx-auto mb-1 text-emerald-600" />
               <p className="font-bold">সমস্ত প্রয়োজনীয় তথ্য সংগৃহীত হয়েছে!</p>
@@ -462,112 +494,155 @@ export function InterrogationPanel({
                   : "ডান পাশের প্যানেলে থানার এজাহার ও আদালতের খসড়া প্রস্তুত রয়েছে।"}
               </p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {pendingQuestions.map((q, idx) => {
-                const currentVal = answers[q.fieldKey] || "";
-                return (
-                  <div
-                    key={q.id || idx}
-                    className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-lg space-y-2.5"
-                  >
-                    {/* Bengali Question */}
-                    <p className="font-bold text-xs text-slate-900">
-                      {idx + 1}। {q.questionBn}
-                    </p>
+          ) : currentQuestion ? (
+            <form onSubmit={handleSingleSubmit} className="space-y-4">
+              <div className="p-4 bg-slate-50/90 border border-indigo-100 rounded-xl space-y-3 shadow-2xs">
+                {/* Progress pill */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/70 px-2.5 py-0.5 rounded-full">
+                    প্রশ্ন {answeredQuestions.length + 1} / {questions.length}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">একক ধারাবাহিক অনুসন্ধান</span>
+                </div>
 
-                    {/* Legal Importance Badge */}
-                    <div className="flex items-start gap-1.5 text-[11px] text-indigo-900 bg-indigo-50/80 p-2 rounded border border-indigo-100">
-                      <AlertTriangle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
-                      <span className="leading-tight">
-                        <strong>কেন জরুরি:</strong> {q.legalImportanceBn}
-                      </span>
-                    </div>
+                {/* Bengali Question */}
+                <p className="font-bold text-xs sm:text-sm text-slate-900 leading-snug">
+                  {answeredQuestions.length + 1}। {currentQuestion.questionBn}
+                </p>
 
-                    {/* Input controls based on type */}
-                    {q.inputType === "select" && (
-                      <div className="space-y-1.5 pt-1">
-                        {q.optionsBn.map((opt, oIdx) => (
-                          <label
-                            key={oIdx}
-                            className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer border transition-colors ${
-                              currentVal === opt
-                                ? "bg-indigo-50 border-indigo-400 font-medium text-indigo-900"
-                                : "bg-white border-slate-200 hover:bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            <input
-                              type="radio"
-                              name={q.fieldKey}
-                              value={opt}
-                              checked={currentVal === opt}
-                              onChange={() => handleSelectOption(q.fieldKey, opt)}
-                              className="text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                {/* Legal Importance Badge */}
+                <div className="flex items-start gap-1.5 text-[11px] text-indigo-900 bg-indigo-50/80 p-2.5 rounded-lg border border-indigo-100">
+                  <AlertTriangle className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
+                  <span className="leading-tight">
+                    <strong>কেন জরুরি:</strong> {currentQuestion.legalImportanceBn}
+                  </span>
+                </div>
 
-                    {q.inputType === "multiselect" && (
-                      <div className="space-y-1.5 pt-1">
-                        {q.optionsBn.map((opt, oIdx) => {
-                          const selected = currentVal
-                            .split(", ")
-                            .includes(opt);
-                          return (
-                            <label
-                              key={oIdx}
-                              className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer border transition-colors ${
-                                selected
-                                  ? "bg-indigo-50 border-indigo-400 font-medium text-indigo-900"
-                                  : "bg-white border-slate-200 hover:bg-slate-100 text-slate-700"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected}
-                                onChange={() =>
-                                  handleToggleMultiOption(q.fieldKey, opt)
-                                }
-                                className="rounded text-indigo-600 focus:ring-indigo-500"
-                              />
-                              <span>{opt}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {q.inputType === "text" && (
-                      <input
-                        type="text"
-                        value={currentVal}
-                        onChange={(e) =>
-                          handleSelectOption(q.fieldKey, e.target.value)
-                        }
-                        placeholder="এখানে সুনির্দিষ্ট তথ্য লিখুন..."
-                        className="w-full text-xs p-2 bg-white border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500"
-                      />
-                    )}
+                {/* Input controls based on type */}
+                {currentQuestion.inputType === "select" && (
+                  <div className="space-y-1.5 pt-1">
+                    {currentQuestion.optionsBn.map((opt, oIdx) => (
+                      <label
+                        key={oIdx}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg text-xs cursor-pointer border transition-colors ${
+                          currentAnswer === opt
+                            ? "bg-indigo-50 border-indigo-400 font-semibold text-indigo-900"
+                            : "bg-white border-slate-200 hover:bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={currentQuestion.fieldKey}
+                          value={opt}
+                          checked={currentAnswer === opt}
+                          onChange={() => handleSelectOption(currentQuestion.fieldKey, opt)}
+                          className="text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
                   </div>
-                );
-              })}
+                )}
+
+                {currentQuestion.inputType === "multiselect" && (
+                  <div className="space-y-1.5 pt-1">
+                    {currentQuestion.optionsBn.map((opt, oIdx) => {
+                      const selected = currentAnswer
+                        .split(", ")
+                        .includes(opt);
+                      return (
+                        <label
+                          key={oIdx}
+                          className={`flex items-center gap-2 p-2.5 rounded-lg text-xs cursor-pointer border transition-colors ${
+                            selected
+                              ? "bg-indigo-50 border-indigo-400 font-semibold text-indigo-900"
+                              : "bg-white border-slate-200 hover:bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() =>
+                              handleToggleMultiOption(currentQuestion.fieldKey, opt)
+                            }
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {currentQuestion.inputType === "text" && (
+                  <div className="pt-1">
+                    <textarea
+                      rows={3}
+                      value={currentAnswer}
+                      onChange={(e) =>
+                        handleSelectOption(currentQuestion.fieldKey, e.target.value)
+                      }
+                      placeholder="এখানে সুনির্দিষ্ট তথ্য লিখুন..."
+                      className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white font-semibold text-xs rounded-lg shadow-sm transition-all"
+                disabled={isSubmitting || !currentAnswer.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-xs transition-all"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>
                   {isSubmitting
-                    ? "আইনি তথ্য যাচাই ও ধারা পুনর্মূল্যায়ন হচ্ছে..."
-                    : "উত্তরগুলো সংরক্ষণ করুন ও ৩য় ধাপে আরজি প্রস্তুত করুন →"}
+                    ? "পরবর্তী প্রশ্ন প্রস্তুত হচ্ছে..."
+                    : pendingQuestions.length === 1
+                    ? "উত্তর সংরক্ষণ ও সমাপনী যাচাই →"
+                    : "উত্তর সংরক্ষণ ও পরবর্তী প্রশ্ন →"}
                 </span>
               </button>
             </form>
+          ) : null}
+
+          {/* Answered Questions History Collapsible */}
+          {answeredQuestions.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowAnsweredHistory(!showAnsweredHistory)}
+                className="flex items-center justify-between w-full text-xs font-semibold text-slate-600 hover:text-slate-900 py-1"
+              >
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                  পূর্বে উত্তরকৃত প্রশ্নাবলি ({answeredQuestions.length}টি সম্পন্ন)
+                </span>
+                {showAnsweredHistory ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                )}
+              </button>
+
+              {showAnsweredHistory && (
+                <div className="space-y-2 mt-2">
+                  {answeredQuestions.map((aq, aIdx) => (
+                    <div
+                      key={aq.id || aIdx}
+                      className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1"
+                    >
+                      <p className="font-semibold text-slate-800">
+                        {aIdx + 1}। {aq.questionBn}
+                      </p>
+                      <p className="text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 font-medium">
+                        উত্তর: {aq.answerValue || "তথ্য সংরক্ষিত"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -707,27 +782,42 @@ export function InterrogationPanel({
         </div>
 
         {/* Step 2 Bottom Sequential Navigation Controls */}
-        <div className="pt-2 pb-4 flex items-center justify-between gap-3 border-t border-slate-200 mt-2">
-          {onPrevStep && (
-            <button
-              type="button"
-              onClick={onPrevStep}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs rounded-xl transition cursor-pointer"
-            >
-              <span>← ১ম ধাপ: ঘটনা পরিবর্তন</span>
-            </button>
-          )}
+        {(() => {
+          const isStep2Complete =
+            (answeredQuestions.length >= 1 || (questions.length === 0 && laws.length > 0)) &&
+            laws.length > 0;
+          return (
+            <div className="pt-2 pb-4 border-t border-slate-200 mt-2 space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                {onPrevStep && (
+                  <button
+                    type="button"
+                    onClick={onPrevStep}
+                    className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs rounded-xl transition cursor-pointer"
+                  >
+                    <span>← ১ম ধাপ: ঘটনা পরিবর্তন</span>
+                  </button>
+                )}
 
-          {onNextStep && (
-            <button
-              type="button"
-              onClick={onNextStep}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition ml-auto cursor-pointer"
-            >
-              <span>৩য় ধাপ: আদালতের আরজি ও প্রিন্ট →</span>
-            </button>
-          )}
-        </div>
+                {onNextStep && (
+                  <button
+                    type="button"
+                    onClick={onNextStep}
+                    disabled={!isStep2Complete}
+                    className="flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-xs transition ml-auto cursor-pointer"
+                  >
+                    <span>৩য় ধাপ: আদালতের আরজি ও প্রিন্ট →</span>
+                  </button>
+                )}
+              </div>
+              {!isStep2Complete && (
+                <p className="text-[10px] text-amber-700 text-right">
+                  * ৩য় ধাপে যাওয়ার জন্য অন্তত ১টি প্রশ্নের উত্তর প্রদান এবং আইনি ধারা নির্ধারিত হতে হবে।
+                </p>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

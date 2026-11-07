@@ -1,6 +1,8 @@
 import { CaseAnalysisResponse, CaseAnalysisResponseSchema, DraftDocType } from "./schemas";
 import { generateMockCaseAnalysis } from "./mock";
-import { INTERVIEWER_SYSTEM_PROMPT, DRAFTER_SYSTEM_PROMPT } from "./prompts";
+import { INTERVIEWER_SYSTEM_PROMPT, DRAFTER_SYSTEM_PROMPT, LEGAL_MAPPING_PROMPT } from "./prompts";
+import { ApplicableLaw, ApplicableLawSchema } from "./schemas";
+import { z } from "zod";
 import { searchTrustedLaws, extractLegalKeywords } from "./rag";
 import { generateDocumentByType } from "@/lib/templates/bdCourtTemplates";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -383,4 +385,107 @@ OCR TEXT:
 
   mapping["extractedAt"] = new Date().toISOString();
   return mapping;
+}
+
+
+/**
+ * Hybrid Law Mapping: Combines raw statement + all Q&A and calls the Live Gemini API
+ * to identify precise statutory sections, with deterministic local fallback.
+ */
+export async function mapApplicableLawsWithLLM(
+  statement: string,
+  answeredQuestions: Record<string, string> = {},
+  categoryHint?: string
+): Promise<ApplicableLaw[]> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const deepseekKey = process.env.DEEPSEEK_API_KEY;
+
+  // Combine raw statement + all Q&A into one structured factual text block
+  let combinedFacts = `ঘটনার মূল বিবরণ (Raw Incident):\n"${statement}"\n\n`;
+  if (Object.keys(answeredQuestions).length > 0) {
+    combinedFacts += `অনুসন্ধান ও জেরার প্রশ্নোত্তর (Q&A Facts):\n`;
+    for (const [key, val] of Object.entries(answeredQuestions)) {
+      if (val && String(val).trim()) {
+        combinedFacts += `- [${key}]: ${val}\n`;
+      }
+    }
+  }
+  if (categoryHint) {
+    combinedFacts += `\nআইনগত ক্যাটাগরি ইঙ্গিত: ${categoryHint}\n`;
+  }
+
+  // 1. Try Gemini Live API
+  if (geminiKey && geminiKey.trim().length > 5) {
+    const envModel = process.env.GEMINI_MODEL;
+    const modelsToTry = [
+      envModel,
+      "gemini-2.5-flash",
+      "gemini-3-flash-preview",
+      "gemini-flash-latest",
+      "gemini-pro-latest",
+    ].filter(Boolean) as string[];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: LEGAL_MAPPING_PROMPT,
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+          },
+        });
+
+        const prompt = `
+FACTUAL STATEMENT & EVIDENCE DETAILS:
+${combinedFacts}
+
+Return a valid JSON array of applicable laws matching ApplicableLawSchema.
+`;
+        const result = await model.generateContent(prompt);
+        const text = result.response.text()?.trim();
+        if (text) {
+          const parsed = JSON.parse(text);
+          const rawArray = Array.isArray(parsed) ? parsed : (parsed.laws || parsed.applicableLaws || []);
+          const validated = z.array(ApplicableLawSchema).safeParse(rawArray);
+          if (validated.success && validated.data.length > 0) {
+            return validated.data;
+          }
+        }
+      } catch (geminiErr) {
+        console.warn(`Gemini law mapping (${modelName}) failed, trying fallback:`, geminiErr);
+      }
+    }
+  }
+
+  // 2. Try DeepSeek if configured
+  if (deepseekKey && deepseekKey.trim().length > 5) {
+    try {
+      const openai = new OpenAI({ apiKey: deepseekKey, baseURL: "https://api.deepseek.com" });
+      const completion = await openai.chat.completions.create({
+        model: "deepseek-chat",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: LEGAL_MAPPING_PROMPT },
+          { role: "user", content: combinedFacts },
+        ],
+      });
+      const content = completion.choices[0]?.message?.content;
+      if (content) {
+        const parsed = JSON.parse(content);
+        const rawArray = Array.isArray(parsed) ? parsed : (parsed.laws || parsed.applicableLaws || []);
+        const validated = z.array(ApplicableLawSchema).safeParse(rawArray);
+        if (validated.success && validated.data.length > 0) {
+          return validated.data;
+        }
+      }
+    } catch (err) {
+      console.warn("DeepSeek law mapping failed:", err);
+    }
+  }
+
+  // 3. Fallback: Local deterministic legal mapping
+  const localAnalysis = generateMockCaseAnalysis(statement, answeredQuestions);
+  return localAnalysis.applicableLaws;
 }

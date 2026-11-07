@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { CaseRecord, DraftDocType } from "@/lib/ai/schemas";
+import { getAllowedDocumentOptions, getDefaultDocTypeForCategory } from "@/lib/law/documentSelection";
 import { PlaceholderNavigator } from "@/components/common/PlaceholderNavigator";
 import { MandatoryDisclaimer } from "@/components/common/Disclaimer";
 import { convertUnicodeToBijoy, convertBijoyToUnicode } from "@/lib/utils/bijoyConverter";
@@ -46,12 +47,28 @@ export function DocumentEditorPanel({
   isGenerating,
   onPrevStep,
 }: DocumentEditorPanelProps) {
-  const defaultDocType: DraftDocType =
-    caseRecord.category === "Civil"
-      ? "PLAINT"
-      : caseRecord.category === "Special_Tribunal"
-      ? "CR_PETITION"
-      : "FIR";
+  const defaultDocType: DraftDocType = getDefaultDocTypeForCategory(
+    caseRecord.category,
+    caseRecord.title,
+    caseRecord.rawStatement
+  );
+
+  const allowedOptions = getAllowedDocumentOptions(
+    caseRecord.category,
+    caseRecord.title,
+    caseRecord.rawStatement
+  );
+
+  // Group items by their group
+  const groupedDocOptions = allowedOptions.reduce((acc, item) => {
+    const existing = acc.find((g) => g.group === item.group);
+    if (existing) {
+      existing.items.push({ id: item.id, label: item.label });
+    } else {
+      acc.push({ group: item.group, items: [{ id: item.id, label: item.label }] });
+    }
+    return acc;
+  }, [] as { group: string; items: { id: DraftDocType; label: string }[] }[]);
 
   const [selectedDocType, setSelectedDocType] = useState<DraftDocType>(defaultDocType);
   const [activeTabDocId, setActiveTabDocId] = useState<string | null>(null);
@@ -108,11 +125,16 @@ export function DocumentEditorPanel({
 
   // Sync document content when caseRecord or active tab changes
   useEffect(() => {
+    const isAllowed = (dt: DraftDocType) => allowedOptions.some((o) => o.id === dt);
     if (docs.length > 0) {
-      const activeDoc = docs.find((d) => d.id === activeTabDocId) || docs[docs.length - 1] || docs[0];
+      const activeDoc =
+        docs.find((d) => d.id === activeTabDocId && isAllowed(d.docType)) ||
+        docs.find((d) => isAllowed(d.docType)) ||
+        docs[docs.length - 1] ||
+        docs[0];
       if (activeDoc) {
         setLocalHtml(activeDoc.contentHtml);
-        setSelectedDocType(activeDoc.docType);
+        setSelectedDocType(isAllowed(activeDoc.docType) ? activeDoc.docType : defaultDocType);
         setActiveTabDocId(activeDoc.id);
         if (editor && editor.getHTML() !== activeDoc.contentHtml) {
           editor.commands.setContent(activeDoc.contentHtml);
@@ -123,7 +145,7 @@ export function DocumentEditorPanel({
       setActiveTabDocId(null);
       setSelectedDocType(defaultDocType);
     }
-  }, [caseRecord.id, caseRecord.documents, caseRecord.updatedAt, editor]);
+  }, [caseRecord.id, caseRecord.category, caseRecord.documents, caseRecord.updatedAt, editor]);
 
   // Handle font mode toggle (Unicode <-> Bijoy)
   const handleToggleFontMode = (mode: "unicode" | "bijoy") => {
@@ -306,51 +328,6 @@ export function DocumentEditorPanel({
     }
   };
 
-  const docTypeOptions: { group: string; items: { id: DraftDocType; label: string }[] }[] = [
-    {
-      group: "থানা ও ম্যাজিস্ট্রেট আদালত (Criminal)",
-      items: [
-        { id: "FIR", label: "থানার এজাহার (FIR)" },
-        { id: "GD", label: "সাধারণ ডায়েরি (GD)" },
-        { id: "CR_PETITION", label: "সি.আর. মামলার আরজি (CR Petition)" },
-        { id: "BAIL_PETITION", label: "জামিনের আবেদন (Bail Petition)" },
-        { id: "ANTICIPATORY_BAIL", label: "আগাম জামিনের আবেদন (Anticipatory Bail)" },
-        { id: "NARAJI", label: "নারাজি পিটিশন (Naraji Petition)" },
-        { id: "TIME_PETITION", label: "সময়ের আবেদন (Time Petition)" },
-        { id: "CROSS_EXAM_QUESTIONS", label: "জেরার প্রশ্নাবলি (Cross-Exam Guide)" },
-      ],
-    },
-    {
-      group: "দেওয়ানি আদালত (Civil Court)",
-      items: [
-        { id: "PLAINT", label: "দেওয়ানি আরজি (Plaint)" },
-        { id: "WRITTEN_STATEMENT", label: "লিখিত জবাব (Written Statement)" },
-        { id: "INJUNCTION_TEMP", label: "অস্থায়ী নিষেধাজ্ঞা (Temp Injunction)" },
-        { id: "INJUNCTION_PERMANENT", label: "চিরস্থায়ী নিষেধাজ্ঞা (Perpetual Injunction)" },
-        { id: "AFFIDAVIT", label: "হলফনামা (Affidavit)" },
-        { id: "VAKALATNAMA", label: "ওকালতনামা (Vakalatnama)" },
-      ],
-    },
-    {
-      group: "পারিবারিক ও বিশেষ ট্রাইব্যুনাল (Family & Special)",
-      items: [
-        { id: "DIVORCE_PLAINT", label: "তালাক / বিবাহবিচ্ছেদ মোকদ্দমা" },
-        { id: "DOWER_RECOVERY", label: "মোহরানা আদায়ের আরজি" },
-        { id: "MAINTENANCE", label: "খোরপোশ ও ভরণপোষণ দাবি" },
-        { id: "ARTHA_RIN_PLAINT", label: "অর্থ ঋণ মামলার আরজি" },
-        { id: "CYBER_COMPLAINT", label: "সাইবার অপরাধের নালিশ" },
-      ],
-    },
-    {
-      group: "সহায়ক আইনি নথি (Supporting Docs)",
-      items: [
-        { id: "LEGAL_NOTICE", label: "লিগ্যাল নোটিশ (Legal Notice)" },
-        { id: "DAMAGE_INVENTORY", label: "ক্ষয়ক্ষতি ও লুণ্ঠিত মালামালের তফসিল" },
-        { id: "WITNESS_LIST", label: "সাক্ষীদের নামের ফর্দ" },
-      ],
-    },
-  ];
-
   return (
     <div className="flex flex-col h-full bg-slate-100 overflow-hidden">
       {/* Top Header */}
@@ -417,7 +394,7 @@ export function DocumentEditorPanel({
               onChange={(e) => setSelectedDocType(e.target.value as DraftDocType)}
               className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 focus:ring-1 focus:ring-indigo-500 pr-8"
             >
-              {docTypeOptions.map((grp, gIdx) => (
+              {groupedDocOptions.map((grp, gIdx) => (
                 <optgroup key={gIdx} label={grp.group}>
                   {grp.items.map((item) => (
                     <option key={item.id} value={item.id}>

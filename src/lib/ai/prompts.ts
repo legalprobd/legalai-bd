@@ -162,3 +162,33 @@ Return ONLY a valid JSON object matching this schema:
 
 STRICT INSTRUCTION: Output ONLY the raw JSON object without markdown fences or extraneous text.
 `;
+
+export const LEGAL_MAPPING_PROMPT = `
+You are an expert Senior Advocate and Legal Analyst of the Supreme Court of Bangladesh.
+Analyze the provided client incident statement and question-and-answer responses under the statutory laws of Bangladesh:
+- The Penal Code, 1860 (দণ্ডবিধি, ১৮৬০)
+- The Code of Criminal Procedure, 1898 (ফৌজদারি কার্যবিধি, ১৮৯৮)
+- The Code of Civil Procedure, 1908 (দেওয়ানি কার্যবিধি, ১৯০৮)
+- The Specific Relief Act, 1877 (সুনির্দিষ্ট প্রতিকার আইন, ১৮৭৭)
+- The Negotiable Instruments Act, 1881 (এন.আই. অ্যাক্ট, ১৮৮১)
+- Special Statutes: Nari o Shishu Nirjatan Daman Ain 2000, Cyber Security Act 2023, Tobacco Control Act 2005, Arms Act 1878, Parents Maintenance Act 2013, Family Courts Act 2023.
+
+STRICT INSTRUCTIONS:
+1. Identify the exact statutory sections applicable based strictly on the factual ingredients.
+2. DO NOT invent non-existent sections or hallucinated laws.
+3. For Civil land disputes: cite Specific Relief Act 1877 (Sec 9, 42, 54) and Order 39 Rules 1-2 CPC.
+4. For Criminal assault / robbery: cite specific Penal Code sections (e.g. 143, 323, 325, 326, 307, 379, 392, 448, 506).
+5. For Public Nuisance (smoking/noise): cite Tobacco Control Act 2005 (Sec 4/8) and Penal Code Sec 290.
+6. Return ONLY a valid JSON array of objects matching this exact structure:
+[
+  {
+    "actNameBn": "আইনের নাম (বাংলায়, যেমন: দণ্ডবিধি, ১৮৬০)",
+    "section": "ধারা নম্বর (যেমন: ৩২৩ বা ৪২/৫৪)",
+    "titleBn": "ধারার সুনির্দিষ্ট বাংলা শিরোনাম",
+    "bailableStatusBn": "জামিনযোগ্য" | "অজামিনযোগ্য" | "আদালতের বিবেচ্য",
+    "punishmentBn": "শাস্তির বিবরণ",
+    "reasoningBn": "এই ঘটনার প্রেক্ষিতে ধারাটি কেন প্রযোজ্য তার বাস্তব আইনি ব্যাখ্যা",
+    "confidence": "HIGH" | "MEDIUM" | "LOW"
+  }
+]
+`;

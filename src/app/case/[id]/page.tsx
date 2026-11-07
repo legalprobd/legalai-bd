@@ -204,6 +204,15 @@ function CaseWorkspaceInner() {
     );
   }
 
+  const isStep1Valid = (caseRecord?.rawStatement || "").trim().length >= 20;
+  const isStep2Valid =
+    isStep1Valid &&
+    ((caseRecord?.questions?.some((q) => q.isAnswered)) ||
+      (caseRecord?.questions?.length === 0));
+  const isStep3Valid =
+    isStep2Valid &&
+    ((caseRecord?.applicableLaws?.length || 0) > 0);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 font-sans antialiased">
       {/* Global Unified Navbar */}
@@ -303,11 +312,15 @@ function CaseWorkspaceInner() {
 
             <button
               type="button"
-              onClick={() => setViewMode("interrogation")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                viewMode === "interrogation"
-                  ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 hover:bg-slate-200"
+              onClick={() => isStep1Valid && setViewMode("interrogation")}
+              disabled={!isStep1Valid}
+              title={!isStep1Valid ? "১ম ধাপে অন্তত ২০ অক্ষরের ঘটনা লিখুন" : undefined}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
+                !isStep1Valid
+                  ? "opacity-50 cursor-not-allowed text-slate-400"
+                  : viewMode === "interrogation"
+                  ? "bg-indigo-600 text-white shadow-xs font-bold cursor-pointer"
+                  : "text-slate-600 hover:bg-slate-200 cursor-pointer"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">২</span>
@@ -318,11 +331,21 @@ function CaseWorkspaceInner() {
 
             <button
               type="button"
-              onClick={() => setViewMode("document")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                viewMode === "document"
-                  ? "bg-indigo-600 text-white shadow-xs font-bold"
-                  : "text-slate-600 hover:bg-slate-200"
+              onClick={() => isStep2Valid && isStep3Valid && setViewMode("document")}
+              disabled={!isStep2Valid || !isStep3Valid}
+              title={
+                !isStep2Valid
+                  ? "২য় ধাপে অন্তত ১টি প্রশ্নের উত্তর দিন"
+                  : !isStep3Valid
+                  ? "প্রযোজ্য আইন নির্ধারিত হতে হবে"
+                  : undefined
+              }
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
+                !isStep2Valid || !isStep3Valid
+                  ? "opacity-50 cursor-not-allowed text-slate-400"
+                  : viewMode === "document"
+                  ? "bg-indigo-600 text-white shadow-xs font-bold cursor-pointer"
+                  : "text-slate-600 hover:bg-slate-200 cursor-pointer"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">৩</span>
